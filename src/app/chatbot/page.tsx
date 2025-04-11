@@ -11,7 +11,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Send, Bot, User, Loader2 } from "lucide-react";
 
@@ -146,13 +146,22 @@ export default function ChatbotPage() {
                               : "bg-indigo-100 text-indigo-600 border border-indigo-200"
                           }`}
                         >
-                          {message.role === "user" ? (
-                            <User className="h-4 w-4" />
-                          ) : (
-                            <Bot className="h-4 w-4" />
-                          )}
+                          <AvatarImage
+                            src={
+                              message.role === "user"
+                                ? "/images/user-avatar.svg"
+                                : "/images/ai-avatar.svg"
+                            }
+                            alt={
+                              message.role === "user" ? "User" : "AI Assistant"
+                            }
+                          />
                           <AvatarFallback className="text-xs">
-                            {message.role === "user" ? "You" : "AI"}
+                            {message.role === "user" ? (
+                              <User className="h-4 w-4" />
+                            ) : (
+                              <Bot className="h-4 w-4" />
+                            )}
                           </AvatarFallback>
                         </Avatar>
 
@@ -185,9 +194,12 @@ export default function ChatbotPage() {
                     <div className="flex justify-start">
                       <div className="flex max-w-[80%] flex-row gap-3">
                         <Avatar className="h-8 w-8 bg-indigo-100 text-indigo-600 border border-indigo-200">
-                          <Bot className="h-4 w-4" />
+                          <AvatarImage
+                            src="/images/ai-avatar.svg"
+                            alt="AI Assistant"
+                          />
                           <AvatarFallback className="text-xs">
-                            AI
+                            <Bot className="h-4 w-4" />
                           </AvatarFallback>
                         </Avatar>
                         <div className="flex flex-col gap-1">
