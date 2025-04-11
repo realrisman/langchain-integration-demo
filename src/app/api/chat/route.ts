@@ -1,23 +1,62 @@
 import { ChatOpenAI } from "@langchain/openai";
 import { HumanMessage, AIMessage } from "@langchain/core/messages";
 import { NextRequest, NextResponse } from "next/server";
+import { z } from "zod";
 
-interface ChatMessage {
-  role: "user" | "assistant";
-  content: string;
+// Schema validation
+const messageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string().min(1),
+});
+
+const requestSchema = z.object({
+  messages: z.array(messageSchema).min(1),
+});
+
+// Custom error types for better error handling
+class ApiError extends Error {
+  status: number;
+
+  constructor(message: string, status: number = 500) {
+    super(message);
+    this.name = "ApiError";
+    this.status = status;
+  }
 }
 
+class ConfigError extends ApiError {
+  constructor(message: string) {
+    super(message, 500);
+    this.name = "ConfigError";
+  }
+}
+
+class ValidationError extends ApiError {
+  constructor(message: string) {
+    super(message, 400);
+    this.name = "ValidationError";
+  }
+}
+
+// Main API handler
 export async function POST(req: NextRequest) {
   try {
-    const { messages } = await req.json();
+    // Parse and validate request
+    const body = await req.json();
+    const validationResult = requestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      throw new ValidationError(
+        "Invalid request format: " + validationResult.error.message
+      );
+    }
+
+    const { messages } = validationResult.data;
 
     // Ensure OpenAI API key is set
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      return NextResponse.json(
-        { error: "OpenAI API key is not configured" },
-        { status: 500 }
-      );
+      throw new ConfigError("OpenAI API key is not configured");
     }
 
     // Initialize the ChatOpenAI model
@@ -28,7 +67,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Convert messages to LangChain format
-    const langChainMessages = messages.map((message: ChatMessage) => {
+    const langChainMessages = messages.map((message) => {
       if (message.role === "user") {
         return new HumanMessage(message.content);
       } else {
@@ -42,6 +81,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ response: response.content });
   } catch (error) {
     console.error("Error in chat API:", error);
+
+    if (error instanceof ApiError) {
+      return NextResponse.json(
+        { error: error.message },
+        { status: error.status }
+      );
+    }
+
     return NextResponse.json(
       { error: "Failed to process chat request" },
       { status: 500 }
