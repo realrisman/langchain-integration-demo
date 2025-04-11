@@ -1,22 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# LangChain Integration Demo
 
-## Getting Started
+This project demonstrates a simple chatbot implementation using LangChain and OpenAI.
 
-First, run the development server:
+## Setup Instructions
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+1. Clone this repository
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Add your OpenAI API key:
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+   - Create a `.env.local` file at the root of the project
+   - Add your OpenAI API key: `OPENAI_API_KEY=your_openai_api_key_here`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+4. Run the development server:
+   ```bash
+   npm run dev
+   ```
+5. Open [http://localhost:3000](http://localhost:3000) in your browser to use the chatbot
+
+## Features
+
+- Simple chat interface for interacting with an AI assistant
+- Uses LangChain to manage conversation history and model interactions
+- Built with Next.js and TypeScript
+
+## Project Structure
+
+- `src/app/page.tsx`: The main chatbot UI component
+- `src/app/api/chat/route.ts`: API endpoint that uses LangChain to interact with OpenAI
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
