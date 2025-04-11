@@ -13,7 +13,20 @@ const requestSchema = z.object({
   messages: z.array(messageSchema).min(1),
 });
 
-// Custom error types for better error handling
+/**
+ * Type definitions for API request and response
+ */
+type ChatMessage = z.infer<typeof messageSchema>;
+type ChatResponse = {
+  response: string;
+};
+type ErrorResponse = {
+  error: string;
+};
+
+/**
+ * Custom error types for better error handling
+ */
 class ApiError extends Error {
   status: number;
 
@@ -38,7 +51,37 @@ class ValidationError extends ApiError {
   }
 }
 
-// Main API handler
+/**
+ * Initializes and returns the LangChain chat model
+ * @throws {ConfigError} If API key is not configured
+ */
+const createChatModel = (): ChatOpenAI => {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new ConfigError("OpenAI API key is not configured");
+  }
+
+  return new ChatOpenAI({
+    openAIApiKey: apiKey,
+    modelName: "gpt-3.5-turbo",
+    temperature: 0.7,
+  });
+};
+
+/**
+ * Converts API message format to LangChain message format
+ */
+const convertToLangChainMessages = (messages: ChatMessage[]) => {
+  return messages.map((message) =>
+    message.role === "user"
+      ? new HumanMessage(message.content)
+      : new AIMessage(message.content)
+  );
+};
+
+/**
+ * Handles the API request to generate chat responses
+ */
 export async function POST(req: NextRequest) {
   try {
     // Parse and validate request
@@ -53,44 +96,28 @@ export async function POST(req: NextRequest) {
 
     const { messages } = validationResult.data;
 
-    // Ensure OpenAI API key is set
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new ConfigError("OpenAI API key is not configured");
-    }
-
-    // Initialize the ChatOpenAI model
-    const chatModel = new ChatOpenAI({
-      openAIApiKey: apiKey,
-      modelName: "gpt-3.5-turbo",
-      temperature: 0.7,
-    });
-
-    // Convert messages to LangChain format
-    const langChainMessages = messages.map((message) => {
-      if (message.role === "user") {
-        return new HumanMessage(message.content);
-      } else {
-        return new AIMessage(message.content);
-      }
-    });
-
-    // Generate a response
+    // Initialize the model and generate response
+    const chatModel = createChatModel();
+    const langChainMessages = convertToLangChainMessages(messages);
     const response = await chatModel.invoke(langChainMessages);
 
-    return NextResponse.json({ response: response.content });
+    // Return successful response
+    return NextResponse.json({
+      response: response.content,
+    } as ChatResponse);
   } catch (error) {
     console.error("Error in chat API:", error);
 
+    // Handle known error types
     if (error instanceof ApiError) {
-      return NextResponse.json(
-        { error: error.message },
-        { status: error.status }
-      );
+      return NextResponse.json({ error: error.message } as ErrorResponse, {
+        status: error.status,
+      });
     }
 
+    // Handle unexpected errors
     return NextResponse.json(
-      { error: "Failed to process chat request" },
+      { error: "Failed to process chat request" } as ErrorResponse,
       { status: 500 }
     );
   }
