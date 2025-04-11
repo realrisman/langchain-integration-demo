@@ -1,16 +1,36 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import {
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Send, Bot, User, Loader2 } from "lucide-react";
 
 interface Message {
   role: "user" | "assistant";
   content: string;
+  timestamp: Date;
 }
 
 export default function ChatbotPage() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +38,11 @@ export default function ChatbotPage() {
     if (!input.trim()) return;
 
     // Add user message to the chat
-    const userMessage: Message = { role: "user", content: input };
+    const userMessage: Message = {
+      role: "user",
+      content: input,
+      timestamp: new Date(),
+    };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput("");
@@ -31,7 +55,9 @@ export default function ChatbotPage() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({
+          messages: newMessages.map(({ role, content }) => ({ role, content })),
+        }),
       });
 
       const data = await response.json();
@@ -44,6 +70,7 @@ export default function ChatbotPage() {
       const assistantMessage: Message = {
         role: "assistant",
         content: data.response,
+        timestamp: new Date(),
       };
       setMessages([...newMessages, assistantMessage]);
     } catch (error) {
@@ -54,94 +81,168 @@ export default function ChatbotPage() {
     }
   };
 
-  return (
-    <div className="flex flex-col min-h-screen max-w-4xl mx-auto">
-      <header className="py-6 border-b mb-6 text-center">
-        <h1 className="text-3xl font-bold">LangChain Chatbot</h1>
-        <p className="text-gray-500 mt-2">
-          Ask me anything and get AI-powered responses
-        </p>
-      </header>
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
-      <div className="flex-1 overflow-y-auto mb-6 p-6 border rounded-xl bg-gray-50/50 shadow-sm">
-        {messages.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 py-10 space-y-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-16 w-16 text-gray-300"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={1.5}
-                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
-              />
-            </svg>
+  return (
+    <div className="container mx-auto max-w-4xl px-4 py-6 h-[calc(100vh-64px)] flex flex-col">
+      <Card className="flex flex-col h-full shadow-lg border-opacity-40">
+        <CardHeader className="px-6 py-4 border-b">
+          <div className="flex items-center gap-2">
+            <div className="bg-blue-100 p-2 rounded-full text-blue-600">
+              <Bot size={20} />
+            </div>
             <div>
-              <p className="text-lg font-medium mb-1">No messages yet</p>
-              <p>Start a conversation by sending a message below.</p>
+              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                LangChain Chatbot
+              </CardTitle>
+              <CardDescription>
+                Powered by AI to provide intelligent responses to your questions
+              </CardDescription>
             </div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {messages.map((message, index) => (
-              <div
-                key={index}
-                className={`p-4 rounded-2xl ${
-                  message.role === "user"
-                    ? "bg-blue-100 ml-auto max-w-[80%] text-blue-900"
-                    : "bg-white max-w-[80%] border shadow-sm"
-                }`}
-              >
-                <div className="font-medium text-xs mb-1 text-gray-500">
-                  {message.role === "user" ? "You" : "AI Assistant"}
-                </div>
-                {message.content}
-              </div>
-            ))}
-            {isLoading && (
-              <div className="bg-white p-4 rounded-2xl max-w-[80%] border shadow-sm">
-                <div className="font-medium text-xs mb-1 text-gray-500">
-                  AI Assistant
-                </div>
-                <div className="flex space-x-2 items-center">
-                  <div className="w-2 h-2 rounded-full bg-blue-500 animate-bounce"></div>
-                  <div
-                    className="w-2 h-2 rounded-full bg-blue-500 animate-bounce"
-                    style={{ animationDelay: "0.2s" }}
-                  ></div>
-                  <div
-                    className="w-2 h-2 rounded-full bg-blue-500 animate-bounce"
-                    style={{ animationDelay: "0.4s" }}
-                  ></div>
-                  <span className="text-gray-400 ml-2">Thinking...</span>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </div>
+        </CardHeader>
 
-      <form onSubmit={handleSubmit} className="flex gap-3 px-2 pb-6">
-        <input
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Type your message..."
-          className="flex-1 p-4 border rounded-full focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-          disabled={isLoading}
-        />
-        <button
-          type="submit"
-          disabled={isLoading || !input.trim()}
-          className="bg-blue-600 hover:bg-blue-700 text-white font-medium px-6 rounded-full disabled:bg-blue-400 transition-colors"
-        >
-          Send
-        </button>
-      </form>
+        <CardContent className="flex-1 p-0 overflow-hidden">
+          <ScrollArea className="h-full">
+            <div className="p-4 space-y-6">
+              {messages.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-[calc(100vh-280px)] text-center text-gray-400 p-4">
+                  <div className="p-8 bg-blue-50 rounded-full mb-6">
+                    <Bot className="h-12 w-12 text-blue-500" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-medium mb-2 text-gray-700">
+                      Start a conversation
+                    </p>
+                    <p className="text-gray-500 max-w-sm mx-auto">
+                      Ask a question or start a conversation with the AI
+                      assistant.
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-6">
+                  {messages.map((message, index) => (
+                    <div
+                      key={index}
+                      className={`flex ${
+                        message.role === "user"
+                          ? "justify-end"
+                          : "justify-start"
+                      }`}
+                    >
+                      <div
+                        className={`flex max-w-[80%] ${
+                          message.role === "user"
+                            ? "flex-row-reverse"
+                            : "flex-row"
+                        } gap-3`}
+                      >
+                        <Avatar
+                          className={`h-8 w-8 ${
+                            message.role === "user"
+                              ? "bg-blue-100 text-blue-600 border border-blue-200"
+                              : "bg-indigo-100 text-indigo-600 border border-indigo-200"
+                          }`}
+                        >
+                          {message.role === "user" ? (
+                            <User className="h-4 w-4" />
+                          ) : (
+                            <Bot className="h-4 w-4" />
+                          )}
+                          <AvatarFallback className="text-xs">
+                            {message.role === "user" ? "You" : "AI"}
+                          </AvatarFallback>
+                        </Avatar>
+
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="font-medium">
+                              {message.role === "user" ? "You" : "AI Assistant"}
+                            </span>
+                            <span>•</span>
+                            <time dateTime={message.timestamp.toISOString()}>
+                              {formatTime(message.timestamp)}
+                            </time>
+                          </div>
+
+                          <div
+                            className={`p-3 rounded-lg ${
+                              message.role === "user"
+                                ? "bg-blue-600 text-white"
+                                : "bg-gray-100 text-gray-800"
+                            } shadow-sm`}
+                          >
+                            {message.content}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+
+                  {isLoading && (
+                    <div className="flex justify-start">
+                      <div className="flex max-w-[80%] flex-row gap-3">
+                        <Avatar className="h-8 w-8 bg-indigo-100 text-indigo-600 border border-indigo-200">
+                          <Bot className="h-4 w-4" />
+                          <AvatarFallback className="text-xs">
+                            AI
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2 text-xs text-gray-500">
+                            <span className="font-medium">AI Assistant</span>
+                            <span>•</span>
+                            <time dateTime={new Date().toISOString()}>
+                              {formatTime(new Date())}
+                            </time>
+                          </div>
+                          <div className="p-3 rounded-lg bg-gray-100 flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin text-blue-500" />
+                            <span className="text-gray-500">Thinking...</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  <div ref={messagesEndRef} />
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+        </CardContent>
+
+        <CardFooter className="border-t p-4">
+          <form onSubmit={handleSubmit} className="flex gap-3 w-full">
+            <Input
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="Type your message..."
+              className="flex-1"
+              disabled={isLoading}
+            />
+            <Button
+              type="submit"
+              disabled={isLoading || !input.trim()}
+              className="gap-2"
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Sending</span>
+                </>
+              ) : (
+                <>
+                  <span>Send</span>
+                  <Send className="h-4 w-4" />
+                </>
+              )}
+            </Button>
+          </form>
+        </CardFooter>
+      </Card>
     </div>
   );
 }
