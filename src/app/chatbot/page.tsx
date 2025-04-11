@@ -105,24 +105,23 @@ export default function ChatbotPage() {
         </CardHeader>
 
         <CardContent className="flex-1 p-0 overflow-hidden">
-          <ScrollArea className="h-full">
-            <div className="p-4 space-y-6">
-              {messages.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-[calc(100vh-280px)] text-center text-gray-400 p-4">
-                  <div className="p-8 bg-blue-50 rounded-full mb-6">
-                    <Bot className="h-12 w-12 text-blue-500" />
-                  </div>
-                  <div>
-                    <p className="text-xl font-medium mb-2 text-gray-700">
-                      Start a conversation
-                    </p>
-                    <p className="text-gray-500 max-w-sm mx-auto">
-                      Ask a question or start a conversation with the AI
-                      assistant.
-                    </p>
-                  </div>
-                </div>
-              ) : (
+          {messages.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-full text-center text-gray-400 p-4">
+              <div className="p-8 bg-blue-50 rounded-full mb-6">
+                <Bot className="h-12 w-12 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-xl font-medium mb-2 text-gray-700">
+                  Start a conversation
+                </p>
+                <p className="text-gray-500 max-w-sm mx-auto">
+                  Ask a question or start a conversation with the AI assistant.
+                </p>
+              </div>
+            </div>
+          ) : (
+            <ScrollArea className="h-full">
+              <div className="p-4 space-y-6">
                 <div className="space-y-6">
                   {messages.map((message, index) => (
                     <div
@@ -209,9 +208,9 @@ export default function ChatbotPage() {
                   )}
                   <div ref={messagesEndRef} />
                 </div>
-              )}
-            </div>
-          </ScrollArea>
+              </div>
+            </ScrollArea>
+          )}
         </CardContent>
 
         <CardFooter className="border-t p-4">
