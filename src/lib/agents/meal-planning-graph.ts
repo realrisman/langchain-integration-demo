@@ -50,7 +50,36 @@ export function createMealPlanningGraph() {
 
   // Define routing function for entry point
   const routeInitialNode = (state: typeof MessagesAnnotation.State) => {
+    console.log(
+      "Initial routing with state messages:",
+      state.messages?.length || 0
+    );
+
     if (state.messages && state.messages.length > 0) {
+      // Check if this is a resumption of conversation with existing messages
+      if (state.messages.length > 1) {
+        // Try to route to the last active agent to maintain continuity
+        for (let i = state.messages.length - 1; i >= 0; i--) {
+          const msg = state.messages[i];
+          if (msg.name && typeof msg.name === "string") {
+            // Check if the name matches one of our agent nodes
+            const agentName = msg.name;
+            if (
+              [
+                "recipeSuggester",
+                "dietaryAdvisor",
+                "groceryListBuilder",
+                "foodInventory",
+              ].includes(agentName)
+            ) {
+              console.log("Routing to previous agent:", agentName);
+              return agentName;
+            }
+          }
+        }
+      }
+
+      // If no previous agent found or this is a new conversation, check first message for intent
       const firstMessage = state.messages[0];
 
       // Check if the first message contains keywords related to dietary advice
@@ -62,14 +91,19 @@ export function createMealPlanningGraph() {
           content.includes("diet") ||
           content.includes("nutrition") ||
           content.includes("nutritional") ||
-          content.includes("dietary advisor")
+          content.includes("dietary advisor") ||
+          content.includes("weight loss") ||
+          content.includes("calories") ||
+          content.includes("healthy eating")
         ) {
+          console.log("Routing to dietaryAdvisor based on content");
           return "dietaryAdvisor";
         }
       }
     }
 
     // Default to recipe suggester for other queries
+    console.log("Default routing to recipeSuggester");
     return "recipeSuggester";
   };
 
@@ -82,8 +116,12 @@ export function createMealPlanningGraph() {
   // Create memory saver for persistence
   const checkpointer = new MemorySaver();
 
-  // Compile the graph
-  const graph = builder.compile({ checkpointer });
+  // Compile the graph with checkpointer
+  const graph = builder.compile({
+    checkpointer,
+    // The name helps with debugging
+    name: "MealPlannerGraph",
+  });
 
   return graph;
 }
@@ -95,6 +133,15 @@ export function createThreadConfig() {
   return {
     configurable: { thread_id: uuidv4() },
     streamMode: "values" as const,
+    // Enable checkpoint saving and loading
+    runnable: {
+      // Always reset with user input
+      reset: false,
+      // Always attempt to load from checkpoint
+      load: true,
+      // Always save state to checkpoint
+      save: true,
+    },
   };
 }
 
@@ -115,7 +162,15 @@ export async function processMealPlannerInput(
     input = { messages: [{ role: "user", content: userInput }] };
   } else {
     // For existing conversations, pass the Command object directly
+    // Make sure we're getting and applying any state to preserve conversation history
     input = userInput;
+
+    // Log the input for debugging purposes
+    console.log(
+      "Processing input for thread:",
+      threadConfig.configurable.thread_id
+    );
+    console.log("Input command:", JSON.stringify(input));
   }
 
   const updates = [];
@@ -128,47 +183,62 @@ export async function processMealPlannerInput(
   // Add the signal to the config if provided
   const config = signal ? { ...threadConfig, signal } : threadConfig;
 
-  // Stream updates from the graph
-  for await (const update of await graph.stream(input, config)) {
-    // Check if we've been aborted
-    if (signal?.aborted) {
-      break;
-    }
-
-    // Increment interaction counter and check if we've exceeded the maximum
-    interactionCounter++;
-    if (interactionCounter > MAX_INTERACTIONS) {
-      // Add a fallback response for infinite loops
-      updates.push({
-        agent: "System",
-        content:
-          "I'll provide some general healthy dinner recipes:\n\n" +
-          "1. Mediterranean Baked Salmon with roasted vegetables and quinoa\n" +
-          "2. Grilled Chicken with steamed broccoli and sweet potatoes\n" +
-          "3. Vegetable Stir-Fry with tofu and brown rice\n" +
-          "4. Turkey and Vegetable Chili\n" +
-          "5. Zucchini Noodles with lean protein and tomato sauce\n\n" +
-          "Would you like more specific details about any of these recipes?",
-      });
-      break;
-    }
-
-    const lastMessage = update.messages
-      ? update.messages[update.messages.length - 1]
-      : undefined;
-
-    if (lastMessage && lastMessage.constructor.name === "AIMessage") {
-      // Update the conversation topic if available
-      if (lastMessage.topic) {
-        currentTopic = lastMessage.topic;
+  try {
+    // Stream updates from the graph
+    for await (const update of await graph.stream(input, config)) {
+      // Check if we've been aborted
+      if (signal?.aborted) {
+        break;
       }
 
-      updates.push({
-        agent: lastMessage.name,
-        content: lastMessage.content,
-        topic: lastMessage.topic || currentTopic,
-      });
+      // Log state updates for debugging
+      if (update.messages) {
+        console.log("Current message count:", update.messages.length);
+      }
+
+      // Increment interaction counter and check if we've exceeded the maximum
+      interactionCounter++;
+      if (interactionCounter > MAX_INTERACTIONS) {
+        // Add a fallback response for infinite loops
+        updates.push({
+          agent: "System",
+          content:
+            "I'll provide some general healthy dinner recipes:\n\n" +
+            "1. Mediterranean Baked Salmon with roasted vegetables and quinoa\n" +
+            "2. Grilled Chicken with steamed broccoli and sweet potatoes\n" +
+            "3. Vegetable Stir-Fry with tofu and brown rice\n" +
+            "4. Turkey and Vegetable Chili\n" +
+            "5. Zucchini Noodles with lean protein and tomato sauce\n\n" +
+            "Would you like more specific details about any of these recipes?",
+        });
+        break;
+      }
+
+      const lastMessage = update.messages
+        ? update.messages[update.messages.length - 1]
+        : undefined;
+
+      if (lastMessage && lastMessage.constructor.name === "AIMessage") {
+        // Update the conversation topic if available
+        if (lastMessage.topic) {
+          currentTopic = lastMessage.topic;
+        }
+
+        updates.push({
+          agent: lastMessage.name,
+          content: lastMessage.content,
+          topic: lastMessage.topic || currentTopic,
+        });
+      }
     }
+  } catch (error) {
+    console.error("Error processing input:", error);
+    updates.push({
+      agent: "System",
+      content:
+        "Sorry, there was an error processing your request. Please try again.",
+      topic: currentTopic,
+    });
   }
 
   return updates;

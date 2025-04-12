@@ -33,34 +33,81 @@ function callLlm(
       ),
   });
 
+  // Check if we have messages with enough conversational context
+  const isFollowupQuery = messages.length > 2;
+
+  // Extract conversation history to analyze prior context
+  let conversationHistory = "";
+  let lastAgentResponse = "";
+  const previousTopics = new Set<string>();
+  let primaryTopic = "";
+
+  if (isFollowupQuery) {
+    // Get messages from the conversation to analyze context and flow
+    const historyMessages = messages.slice(1); // Skip system message
+
+    // Build a summary of the conversation history
+    for (let i = 0; i < historyMessages.length; i++) {
+      const msg = historyMessages[i];
+
+      if (msg.constructor.name === "AIMessage") {
+        conversationHistory += `AI (${msg.name || "assistant"}): ${truncateText(msg.content as string, 150)}\n`;
+
+        // Store last AI message for reference
+        if (i === historyMessages.length - 2) {
+          lastAgentResponse = msg.content as string;
+        }
+
+        // Extract topics
+        if (msg.additional_kwargs?.topic) {
+          previousTopics.add(msg.additional_kwargs.topic as string);
+          // Last encountered topic becomes primary
+          primaryTopic = msg.additional_kwargs.topic as string;
+        }
+      } else {
+        conversationHistory += `User: ${truncateText(msg.content as string, 150)}\n`;
+      }
+    }
+  }
+
   // Create enhanced system prompt with context awareness
-  const enhancedSystemPrompt = `You are a ${agentName} responding to users in a meal planning system.
+  let contextualPrompt = `You are a ${agentName} responding to users in a meal planning system.
   
-IMPORTANT ROUTING INSTRUCTIONS:
-1. AVOID UNNECESSARY ROUTING - You should generally handle queries yourself unless they clearly require another expert:
-   - Only route to "dietaryAdvisor" for specific nutrition or diet advice (not general meal planning)
-   - Only route to "recipeSuggester" if specific recipes are needed and haven't been discussed
-   - Only route to "groceryListBuilder" after recipes have been decided
-   - Only route to "foodInventory" for specific ingredient questions
+CRITICAL CONTEXT INSTRUCTIONS:
+1. MAINTAIN PERFECT CONVERSATION CONTINUITY:
+   - Your response MUST directly connect to the previous message history below.
+   - Respond as if you're in an ongoing conversation, not starting a new one.
+   - If the user is asking about something previously mentioned, reference it explicitly.
+   - The user's input is a direct continuation of the previous conversation.
+   - AVOID INTRODUCTIONS OR GENERIC GREETINGS - users expect you to remember details from earlier.
+   
+2. AVOID UNNECESSARY ROUTING:
+   - Only route to another agent if the user clearly needs specialized expertise.
+   - If you can answer the follow-up question yourself, do so directly.
+   
+3. PREVENT INCORRECT HISTORY REFERENCES:
+   - Never invent conversations that haven't happened.
+   - Don't mention topics that weren't previously discussed.
+   - Only reference facts, preferences, or dietary needs the user has actually shared.
+`;
 
-2. PREVENT CIRCULAR HANDOFFS:
-   - If you were just routed to from another agent, don't immediately route back
-   - If you can reasonably answer the query yourself, choose "finish" instead of routing
+  // Add context information if this is a follow-up
+  if (isFollowupQuery) {
+    contextualPrompt += `\nCONVERSATION HISTORY (read carefully):
+${conversationHistory}
 
-3. MAINTAIN CONVERSATION CONTEXT AT ALL COSTS:
-   - If the user is asking about something mentioned earlier, continue that same topic
-   - Pay special attention to references like "it", "that recipe", "the diet you mentioned", etc.
-
-4. HANDLE THESE QUERY TYPES YOURSELF (don't route):
-   - Initial requests for meal planning (Recipe Suggester handles this)
-   - Questions about recipe details already discussed
-   - Follow-up questions to your previous responses
-
-YOUR PRIMARY GOAL: Ensure contextual continuity while avoiding unnecessary handoffs.`;
+IMPORTANT CONTINUITY NOTES:
+- Primary conversation topic: ${primaryTopic || "meal planning"}
+${previousTopics.size > 0 ? `- Topics discussed so far: ${Array.from(previousTopics).join(", ")}` : ""}
+- The user's current message is a DIRECT FOLLOW-UP to this conversation.
+- You must maintain context with your previous responses.
+${lastAgentResponse ? `- Your last response was about: "${truncateText(lastAgentResponse, 100)}"` : ""}
+`;
+  }
 
   // Add enhanced prompt as a system message at the beginning
   const augmentedMessages = [
-    { role: "system", content: enhancedSystemPrompt },
+    { role: "system", content: contextualPrompt },
     ...messages,
   ] as BaseMessage[];
 
@@ -70,15 +117,55 @@ YOUR PRIMARY GOAL: Ensure contextual continuity while avoiding unnecessary hando
 }
 
 /**
+ * Helper function to truncate text to specified length
+ */
+function truncateText(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.substring(0, maxLength) + "...";
+}
+
+/**
  * Recipe Suggester Agent
  * Recommends meals based on preferences and constraints
  */
 export async function recipeSuggester(
   state: typeof MessagesAnnotation.State
 ): Promise<Command> {
+  // Debug the incoming state
+  console.log(
+    "recipeSuggester received state with",
+    state.messages?.length || 0,
+    "messages"
+  );
+
+  // If we have no messages, this indicates an issue with state preservation
+  if (!state.messages || state.messages.length === 0) {
+    console.error("RecipeSuggester received empty message state!");
+    return new Command({
+      goto: "human",
+      update: {
+        messages: [
+          {
+            role: "ai",
+            content:
+              "I apologize, but I'm having trouble accessing our conversation history. Could you please let me know what kind of meal planning help you're looking for today?",
+            name: "recipeSuggester",
+            topic: "recipe suggestions",
+          },
+        ],
+      },
+    });
+  }
+
   const systemPrompt =
     "You are a recipe expert named 'Recipe Suggester' that can recommend meals based on user preferences, dietary needs, and available ingredients. " +
     "IMPORTANT: Always identify yourself as 'Recipe Suggester' at the beginning of your response. " +
+    "CRITICAL CONTEXT INSTRUCTIONS: " +
+    "- Respond with full awareness of the conversation history. The user's latest message is a direct follow-up to previous messages. " +
+    "- If a conversation about meal planning, diet, or recipes is already in progress, CONTINUE that conversation. " +
+    "- NEVER introduce yourself as if starting a new conversation if you've already spoken to the user. " +
+    "- NEVER invent or reference previous conversations that didn't happen. " +
+    "- ALWAYS check if the user is referencing something from earlier in the conversation (such as 'high protein foods' from a diet discussion). " +
     "ROUTING INSTRUCTIONS: " +
     "- ONLY route to other agents after you've collected sufficient information or if the request is clearly outside your expertise. " +
     "- For meal planning requests, you should handle them yourself FIRST by asking about preferences and suggesting recipes. " +
@@ -126,6 +213,11 @@ export async function dietaryAdvisor(
   const systemPrompt =
     "You are a nutrition expert named 'Dietary Advisor' that can provide dietary advice based on health goals and restrictions. " +
     "IMPORTANT: Always identify yourself as 'Dietary Advisor' at the beginning of your response. " +
+    "CRITICAL CONTEXT INSTRUCTIONS: " +
+    "- Respond with full awareness of the conversation history. The user's latest message is a direct follow-up to previous messages. " +
+    "- If a conversation about diet plans, nutrition, or health goals is already in progress, CONTINUE that conversation. " +
+    "- NEVER introduce yourself as if starting a new conversation if you've already spoken to the user. " +
+    "- NEVER invent or reference previous conversations that didn't happen. " +
     "ROUTING INSTRUCTIONS: " +
     "- If the user asks about specific recipes or meal ideas, say 'Let me connect you with our recipe expert who can help with that' and route to 'recipeSuggester'. " +
     "- If the user asks about creating grocery lists, say 'Let me connect you with our grocery expert' and route to 'groceryListBuilder'. " +
@@ -273,8 +365,10 @@ export function humanNode(state: typeof MessagesAnnotation.State): Command {
 
     // Find the active agent from previous messages
     for (let i = state.messages.length - 2; i >= 0; i--) {
-      if (state.messages[i].name) {
-        activeAgent = state.messages[i].name;
+      const msg = state.messages[i];
+      // Check for agent name property
+      if (msg.name && typeof msg.name === "string") {
+        activeAgent = msg.name;
         break;
       }
     }
@@ -297,8 +391,10 @@ export function humanNode(state: typeof MessagesAnnotation.State): Command {
 
   // Look up the active agent
   for (let i = state.messages.length - 1; i >= 0; i--) {
-    if (state.messages[i].name) {
-      activeAgent = state.messages[i].name;
+    const msg = state.messages[i];
+    // Check for agent name property
+    if (msg.name && typeof msg.name === "string") {
+      activeAgent = msg.name;
       break;
     }
   }

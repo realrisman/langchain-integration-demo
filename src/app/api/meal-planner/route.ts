@@ -8,11 +8,20 @@ import {
   processMealPlannerInput,
 } from "@/lib/agents/meal-planning-graph";
 
+// Define message type for enhanced control
+type Message = { role: string; content: string; name?: string; topic?: string };
+
+// Keep a map of all messages by thread ID
+const messagesByThread = new Map<string, Message[]>();
+
 // Keep a map of active thread configurations
 const activeThreads = new Map<string, ReturnType<typeof createThreadConfig>>();
 
 // Keep track of active AbortControllers for each thread
 const activeAbortControllers = new Map<string, AbortController>();
+
+// Keep track of the last active agent for each thread
+const activeAgents = new Map<string, string>();
 
 // Schema validation for initial request
 const initialRequestSchema = z.object({
@@ -79,10 +88,30 @@ export async function POST(req: NextRequest) {
         signal
       );
 
+      // Store the last agent that responded for future requests
+      if (updates.length > 0) {
+        activeAgents.set(threadId, updates[updates.length - 1].agent);
+      }
+
+      // Store the complete conversation for this thread
+      const messages: Message[] = [
+        { role: "user", content: body.message },
+        ...updates.map((update) => ({
+          role: "ai",
+          content: update.content,
+          name: update.agent,
+          topic: update.topic,
+        })),
+      ];
+
+      // Save message history for thread
+      messagesByThread.set(threadId, messages);
+
       // Return response with thread ID and updates
       return NextResponse.json({
         threadId,
         updates,
+        messageCount: messages.length,
       });
     } else {
       // Validate follow-up request
@@ -118,10 +147,42 @@ export async function POST(req: NextRequest) {
         );
       }
 
-      // Create a command to resume the conversation
+      // Get existing conversation history
+      const existingMessages = messagesByThread.get(threadId) || [];
+
+      // Add new user message
+      const newUserMessage: Message = { role: "user", content: body.message };
+      const allMessages = [...existingMessages, newUserMessage];
+
+      console.log(
+        `Thread ${threadId} existing messages: ${existingMessages.length}`
+      );
+
+      // Determine the last active agent from previous responses for this thread
+      let lastAgent = "recipeSuggester"; // Default fallback
+
+      // Get the last active agent from our tracking map
+      const storedAgent = activeAgents.get(threadId);
+      if (storedAgent) {
+        lastAgent = storedAgent;
+      }
+
+      console.log("Thread ID:", threadId);
+      console.log("Last active agent:", lastAgent);
+
+      // Create a command that includes ALL previous messages and routes to the right agent
       const command = new Command({
-        resume: {
-          messages: [{ role: "user", content: body.message }],
+        goto: lastAgent,
+        update: {
+          messages: allMessages.map((msg) => {
+            // Transform message format if needed
+            return {
+              role: msg.role,
+              content: msg.content,
+              ...(msg.name ? { name: msg.name } : {}),
+              ...(msg.topic ? { topic: msg.topic } : {}),
+            };
+          }),
         },
       });
 
@@ -133,10 +194,31 @@ export async function POST(req: NextRequest) {
         signal
       );
 
-      // Return response with updates
+      // Update the last agent that responded
+      if (updates.length > 0) {
+        activeAgents.set(threadId, updates[updates.length - 1].agent);
+
+        // Add agent responses to conversation history
+        updates.forEach((update) => {
+          allMessages.push({
+            role: "ai",
+            content: update.content,
+            name: update.agent,
+            topic: update.topic,
+          });
+        });
+
+        // Update stored message history
+        messagesByThread.set(threadId, allMessages);
+      }
+
+      // Return response with updates and debug information
       return NextResponse.json({
         threadId,
         updates,
+        lastAgent,
+        messageCount: allMessages.length,
+        updatesReceived: updates.length,
       });
     }
   } catch (error) {
@@ -151,6 +233,7 @@ export async function POST(req: NextRequest) {
     // Clean up if request completes or errors
     if (threadId) {
       activeAbortControllers.delete(threadId);
+      // Don't delete from activeAgents or messagesByThread to maintain context between sessions
     }
   }
 }

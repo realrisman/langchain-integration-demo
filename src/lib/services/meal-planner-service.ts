@@ -1,5 +1,18 @@
 import { MealPlannerResponse } from "@/types/meal-planner";
 
+// Define update interface for agent responses
+interface AgentUpdate {
+  agent: string;
+  content: string;
+  topic?: string;
+}
+
+// Store message history for each thread
+const messageHistoryByThread = new Map<
+  string,
+  Array<{ role: string; content: string; agent?: string; topic?: string }>
+>();
+
 /**
  * Service for interacting with the meal planner API
  */
@@ -67,7 +80,34 @@ export const MealPlannerService = {
         throw error;
       }
 
-      return await response.json();
+      // Parse the response
+      const apiResponse = await response.json();
+
+      // Store messages in history for this thread
+      if (apiResponse.threadId) {
+        // Initialize history array if this is a new thread
+        if (!messageHistoryByThread.has(apiResponse.threadId)) {
+          messageHistoryByThread.set(apiResponse.threadId, []);
+        }
+
+        // Add user message
+        const history = messageHistoryByThread.get(apiResponse.threadId)!;
+        history.push({ role: "user", content: message });
+
+        // Add agent responses
+        if (apiResponse.updates) {
+          apiResponse.updates.forEach((update: AgentUpdate) => {
+            history.push({
+              role: "ai",
+              content: update.content,
+              agent: update.agent,
+              topic: update.topic,
+            });
+          });
+        }
+      }
+
+      return apiResponse;
     } catch (error) {
       // Handle AbortError separately
       if (
@@ -82,6 +122,15 @@ export const MealPlannerService = {
 
       // Rethrow other errors
       throw error;
+    }
+  },
+
+  /**
+   * Resets the conversation history
+   */
+  resetConversation(threadId: string): void {
+    if (messageHistoryByThread.has(threadId)) {
+      messageHistoryByThread.delete(threadId);
     }
   },
 };
