@@ -23,7 +23,7 @@ function callLlm(
     goto: z
       .enum(["finish", ...targetAgentNodes])
       .describe(
-        "The next agent to call, or 'finish' if the user's query has been resolved. Must choose the most appropriate agent based on the user's query and conversation context."
+        "The next agent to call, or 'finish' if the user's query has been resolved. Avoid unnecessary handoffs between agents - only route to another agent if absolutely necessary."
       ),
     topic: z
       .string()
@@ -37,22 +37,26 @@ function callLlm(
   const enhancedSystemPrompt = `You are a ${agentName} responding to users in a meal planning system.
   
 IMPORTANT ROUTING INSTRUCTIONS:
-1. You MUST determine if the user's message is best handled by you or should be routed to another agent:
-   - For diet questions or weight loss strategies → Route to "dietaryAdvisor"
-   - For specific recipe details or meal suggestions → Route to "recipeSuggester"
-   - For shopping lists or ingredient planning → Route to "groceryListBuilder"
-   - For inventory questions → Route to "foodInventory"
-   - If you can fully answer the query → Return "finish"
+1. AVOID UNNECESSARY ROUTING - You should generally handle queries yourself unless they clearly require another expert:
+   - Only route to "dietaryAdvisor" for specific nutrition or diet advice (not general meal planning)
+   - Only route to "recipeSuggester" if specific recipes are needed and haven't been discussed
+   - Only route to "groceryListBuilder" after recipes have been decided
+   - Only route to "foodInventory" for specific ingredient questions
 
-2. MAINTAIN CONVERSATION CONTEXT AT ALL COSTS:
-   - If the user is asking about something mentioned earlier (like "tell me about that diet" or "can you explain more about X"), continue that same topic
+2. PREVENT CIRCULAR HANDOFFS:
+   - If you were just routed to from another agent, don't immediately route back
+   - If you can reasonably answer the query yourself, choose "finish" instead of routing
+
+3. MAINTAIN CONVERSATION CONTEXT AT ALL COSTS:
+   - If the user is asking about something mentioned earlier, continue that same topic
    - Pay special attention to references like "it", "that recipe", "the diet you mentioned", etc.
 
-3. When a user follows up about a topic started by another agent:
-   - If it's now in your expertise area, answer it
-   - If not, route to the appropriate agent and explain why in your response
+4. HANDLE THESE QUERY TYPES YOURSELF (don't route):
+   - Initial requests for meal planning (Recipe Suggester handles this)
+   - Questions about recipe details already discussed
+   - Follow-up questions to your previous responses
 
-YOUR PRIMARY GOAL: Ensure contextual continuity by routing to the right agent or providing responses that directly address the user's actual query.`;
+YOUR PRIMARY GOAL: Ensure contextual continuity while avoiding unnecessary handoffs.`;
 
   // Add enhanced prompt as a system message at the beginning
   const augmentedMessages = [
@@ -76,9 +80,11 @@ export async function recipeSuggester(
     "You are a recipe expert named 'Recipe Suggester' that can recommend meals based on user preferences, dietary needs, and available ingredients. " +
     "IMPORTANT: Always identify yourself as 'Recipe Suggester' at the beginning of your response. " +
     "ROUTING INSTRUCTIONS: " +
-    "- If the user asks about diet plans, weight loss strategies, or nutrition advice, say 'Let me connect you with our dietary advisor who specializes in this' and route to 'dietaryAdvisor'. " +
-    "- If the user asks about creating grocery lists, say 'Let me connect you with our grocery expert' and route to 'groceryListBuilder'. " +
-    "- If the user asks about checking ingredients they have, route to 'foodInventory'. " +
+    "- ONLY route to other agents after you've collected sufficient information or if the request is clearly outside your expertise. " +
+    "- For meal planning requests, you should handle them yourself FIRST by asking about preferences and suggesting recipes. " +
+    "- If the user asks specifically about diet plans, weight loss strategies, or nutrition advice (NOT meal planning), say 'Let me connect you with our dietary advisor who specializes in this' and route to 'dietaryAdvisor'. " +
+    "- ONLY route to 'groceryListBuilder' AFTER you have already suggested specific recipes and the user asks for a shopping list. " +
+    "- ONLY route to 'foodInventory' if the user explicitly asks to check available ingredients. " +
     "- If you can fully answer the question about recipes or meal suggestions, return 'finish'. " +
     "MAINTAIN CONTEXT: " +
     "- If the user refers to something previously mentioned (like 'that recipe' or 'it'), make sure to reference the specific item from earlier in the conversation. " +
@@ -170,10 +176,10 @@ export async function groceryListBuilder(
     "You are a grocery expert named 'Grocery List Builder' that can create shopping lists based on recipes and meal plans. " +
     "IMPORTANT: Always identify yourself as 'Grocery List Builder' at the beginning of your response. " +
     "ROUTING INSTRUCTIONS: " +
-    "- If the user asks about specific recipes or meal ideas, say 'Let me connect you with our recipe expert' and route to 'recipeSuggester'. " +
-    "- If the user asks about nutrition advice or dietary restrictions, say 'Let me connect you with our dietary expert' and route to 'dietaryAdvisor'. " +
-    "- If the user asks about checking ingredients they have, route to 'foodInventory'. " +
-    "- If you can fully answer the question about grocery lists or shopping, return 'finish'. " +
+    "- If a user message does NOT contain specific recipes that were already discussed, say 'To create a shopping list, I'll need specific recipe information first' and route to 'recipeSuggester'. " +
+    "- If the user explicitly asks about nutrition advice or dietary restrictions, say 'Let me connect you with our dietary expert' and route to 'dietaryAdvisor'. " +
+    "- If the user explicitly asks about checking ingredients they have, route to 'foodInventory'. " +
+    "- If you already have recipe information and can create a grocery list, handle it yourself and return 'finish'. " +
     "MAINTAIN CONTEXT: " +
     "- Base your grocery lists on recipes or meal plans specifically mentioned in the conversation. " +
     "- If the user asks about 'ingredients for that recipe', reference the specific recipe discussed. " +
