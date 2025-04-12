@@ -34,21 +34,3 @@ export type AgentInfo = {
   icon: ReactNode;
   style: AgentStyle;
 };
-
-// Zustand store types
-export interface MealPlannerState {
-  messages: Message[];
-  threadId: string | null;
-  currentTopic: string | null;
-  isLoading: boolean;
-  inputValue: string;
-
-  // Actions
-  setMessages: (messages: Message[]) => void;
-  addMessage: (message: Message) => void;
-  setThreadId: (threadId: string | null) => void;
-  setCurrentTopic: (topic: string | null) => void;
-  setIsLoading: (isLoading: boolean) => void;
-  setInputValue: (value: string) => void;
-  reset: () => void;
-}

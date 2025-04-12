@@ -2,8 +2,25 @@ import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 import { useRef, useCallback } from "react";
 import type { FormEvent } from "react";
-import { MealPlannerState } from "@/types/meal-planner";
+import { Message } from "@/types/meal-planner";
 import { MealPlannerService } from "@/lib/services/meal-planner-service";
+
+interface MealPlannerState {
+  messages: Message[];
+  threadId: string | null;
+  currentTopic: string | null;
+  isLoading: boolean;
+  inputValue: string;
+
+  // Actions
+  setMessages: (messages: Message[]) => void;
+  addMessage: (message: Message) => void;
+  setThreadId: (threadId: string | null) => void;
+  setCurrentTopic: (topic: string | null) => void;
+  setIsLoading: (isLoading: boolean) => void;
+  setInputValue: (value: string) => void;
+  reset: () => void;
+}
 
 /**
  * Zustand store for meal planner state management
