@@ -37,6 +37,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           messagesEndRef={messagesEndRef}
           setInputValue={setInputValue}
           inputRef={inputRef}
+          isLoading={isLoading}
         />
       </div>
 

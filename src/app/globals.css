@@ -121,3 +121,31 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Custom Typing Indicator Animation */
+.typing-indicator {
+  @apply flex items-end gap-[3px];
+}
+
+.typing-indicator span {
+  @apply block w-[6px] h-[6px] rounded-full bg-indigo-500 opacity-60 dark:bg-indigo-300;
+}
+
+.typing-indicator span:nth-child(1) {
+  animation: bounce 1.2s infinite 0s;
+}
+
+.typing-indicator span:nth-child(2) {
+  @apply h-[4px];
+  animation: bounce 1.2s infinite 0.3s;
+}
+
+.typing-indicator span:nth-child(3) {
+  @apply h-[8px];
+  animation: bounce 1.2s infinite 0.6s;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
