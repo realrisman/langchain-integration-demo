@@ -5,8 +5,8 @@ import React from "react";
  */
 export const EmptyChatState = () => {
   return (
-    <div className="flex flex-col items-center justify-center h-full py-12 text-center">
-      <div className="bg-blue-100 text-blue-500 rounded-full p-4 mb-4">
+    <div className="flex flex-col items-center justify-center h-full py-8 px-4 text-center">
+      <div className="bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-300 rounded-full p-4 mb-4 backdrop-blur-sm">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="h-10 w-10"
@@ -23,13 +23,48 @@ export const EmptyChatState = () => {
           />
         </svg>
       </div>
-      <h3 className="text-xl font-medium text-gray-900 mb-2">
-        Welcome to your Meal Planning Assistant
+      <h3 className="text-2xl font-medium text-gray-900 dark:text-gray-50 mb-3 bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+        Welcome to Your Meal Planning Assistant
       </h3>
-      <p className="text-gray-500 max-w-md">
+      <p className="text-gray-600 dark:text-gray-300 max-w-md mb-6">
         Ask questions about meal planning, recipes, nutrition advice, or help
         building a grocery list. I&apos;ll connect you with the right expert.
       </p>
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
+        <div className="text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/50 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-200">
+          <p className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">
+            🍽️ Plan a Week of Meals
+          </p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            &ldquo;Create a 7-day meal plan focused on Mediterranean diet&rdquo;
+          </p>
+        </div>
+        <div className="text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/50 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-200">
+          <p className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">
+            🥗 Dietary Preferences
+          </p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            &ldquo;I need gluten-free dinner recipes for a family of four&rdquo;
+          </p>
+        </div>
+        <div className="text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/50 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-200">
+          <p className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">
+            🛒 Create Shopping List
+          </p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            &ldquo;Make a grocery list for a vegetarian taco night&rdquo;
+          </p>
+        </div>
+        <div className="text-left p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-800/50 shadow-sm backdrop-blur-sm hover:shadow-md transition-all duration-200">
+          <p className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-1">
+            👨‍🍳 Recipe Ideas
+          </p>
+          <p className="text-xs text-gray-600 dark:text-gray-400">
+            &ldquo;What can I cook with chicken, broccoli, and rice?&rdquo;
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
