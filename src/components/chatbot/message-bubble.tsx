@@ -1,5 +1,6 @@
 import { formatDistanceToNow } from "date-fns";
 import { Bot, User } from "lucide-react";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 /**
  * Message role type
@@ -46,13 +47,15 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
           isUser ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
         }`}
       >
-        <div className="prose">
-          {content.split("\n").map((line, i) => (
-            <p key={i} className={`m-0 ${i > 0 ? "mt-4" : ""}`}>
-              {line}
-            </p>
-          ))}
-        </div>
+        {isUser ? (
+          <div className="whitespace-pre-line">{content}</div>
+        ) : (
+          <MarkdownRenderer
+            content={content}
+            variant="compact"
+            className={isUser ? "prose-invert" : ""}
+          />
+        )}
 
         {/* Timestamp */}
         <div
