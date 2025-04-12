@@ -3,7 +3,19 @@ import React from "react";
 /**
  * Displays a welcome message when the chat is empty
  */
-export const EmptyChatState = () => {
+export interface EmptyChatStateProps {
+  setInputValue?: (value: string) => void;
+}
+
+export const EmptyChatState: React.FC<EmptyChatStateProps> = ({
+  setInputValue,
+}) => {
+  const handleExampleClick = (text: string) => {
+    if (setInputValue) {
+      setInputValue(text);
+    }
+  };
+
   return (
     <div className="flex flex-col items-center justify-center h-full py-8 px-4 text-center relative animate-fade-up animate-duration-500">
       {/* Decorative background elements */}
@@ -38,7 +50,14 @@ export const EmptyChatState = () => {
       </p>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-lg relative z-10">
-        <div className="text-left p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/60 shadow-md backdrop-blur-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group">
+        <div
+          onClick={() =>
+            handleExampleClick(
+              "Create a 7-day meal plan focused on Mediterranean diet"
+            )
+          }
+          className="text-left p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/60 shadow-md backdrop-blur-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group"
+        >
           <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
             🍽️ Plan a Week of Meals
           </p>
@@ -46,7 +65,14 @@ export const EmptyChatState = () => {
             &ldquo;Create a 7-day meal plan focused on Mediterranean diet&rdquo;
           </p>
         </div>
-        <div className="text-left p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/60 shadow-md backdrop-blur-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group">
+        <div
+          onClick={() =>
+            handleExampleClick(
+              "I need gluten-free dinner recipes for a family of four"
+            )
+          }
+          className="text-left p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/60 shadow-md backdrop-blur-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group"
+        >
           <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
             🥗 Dietary Preferences
           </p>
@@ -54,7 +80,14 @@ export const EmptyChatState = () => {
             &ldquo;I need gluten-free dinner recipes for a family of four&rdquo;
           </p>
         </div>
-        <div className="text-left p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/60 shadow-md backdrop-blur-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group">
+        <div
+          onClick={() =>
+            handleExampleClick(
+              "Make a grocery list for a vegetarian taco night"
+            )
+          }
+          className="text-left p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/60 shadow-md backdrop-blur-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group"
+        >
           <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
             🛒 Create Shopping List
           </p>
@@ -62,7 +95,14 @@ export const EmptyChatState = () => {
             &ldquo;Make a grocery list for a vegetarian taco night&rdquo;
           </p>
         </div>
-        <div className="text-left p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/60 shadow-md backdrop-blur-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group">
+        <div
+          onClick={() =>
+            handleExampleClick(
+              "What can I cook with chicken, broccoli, and rice?"
+            )
+          }
+          className="text-left p-4 rounded-lg border border-slate-200 dark:border-slate-700 bg-white/90 dark:bg-slate-800/60 shadow-md backdrop-blur-md hover:shadow-lg transition-all duration-300 hover:scale-105 cursor-pointer group"
+        >
           <p className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-1 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
             👨‍🍳 Recipe Ideas
           </p>

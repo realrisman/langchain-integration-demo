@@ -9,15 +9,17 @@ import { EmptyChatState } from "./empty-chat-state";
 interface MessageListProps {
   messages: Message[];
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
+  setInputValue?: (value: string) => void;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
   messages,
   messagesEndRef,
+  setInputValue,
 }) => {
   // Early return for empty messages
   if (messages.length === 0) {
-    return <EmptyChatState />;
+    return <EmptyChatState setInputValue={setInputValue} />;
   }
 
   return (

@@ -32,7 +32,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div className="absolute inset-0 bg-grid-slate-200/50 dark:bg-grid-slate-700/20 bg-[size:20px_20px] opacity-50 pointer-events-none"></div>
 
       <div className="flex-1 p-4 md:p-6 overflow-y-auto relative z-10 scroll-smooth scrollbar-thin scrollbar-track-transparent scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
-        <MessageList messages={messages} messagesEndRef={messagesEndRef} />
+        <MessageList
+          messages={messages}
+          messagesEndRef={messagesEndRef}
+          setInputValue={setInputValue}
+        />
       </div>
 
       <div className="border-t p-4 md:p-5 bg-white/90 dark:bg-slate-900/90 dark:border-slate-700/70 backdrop-blur-md relative z-10">
