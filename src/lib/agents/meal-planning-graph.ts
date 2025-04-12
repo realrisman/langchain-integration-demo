@@ -61,6 +61,38 @@ const AGENT_INTENT_CONFIG = {
 };
 
 /**
+ * Fallback responses for different scenarios
+ */
+const FALLBACK_RESPONSES = {
+  timeout: {
+    agent: "System",
+    recipes: [
+      "Mediterranean Baked Salmon with roasted vegetables and quinoa",
+      "Grilled Chicken with steamed broccoli and sweet potatoes",
+      "Vegetable Stir-Fry with tofu and brown rice",
+      "Turkey and Vegetable Chili",
+      "Zucchini Noodles with lean protein and tomato sauce",
+    ],
+    getContent: function () {
+      const recipesList = this.recipes
+        .map((recipe, index) => `${index + 1}. ${recipe}`)
+        .join("\n");
+
+      return (
+        "I'll provide some general healthy dinner recipes:\n\n" +
+        recipesList +
+        "\n\nWould you like more specific details about any of these recipes?"
+      );
+    },
+  },
+  error: {
+    agent: "System",
+    content:
+      "Sorry, there was an error processing your request. Please try again.",
+  },
+};
+
+/**
  * Creates and configures the meal planning multi-agent system
  */
 export function createMealPlanningGraph() {
@@ -217,17 +249,11 @@ export async function processMealPlannerInput(
       // Increment interaction counter and check if we've exceeded the maximum
       interactionCounter++;
       if (interactionCounter > MAX_INTERACTIONS) {
-        // Add a fallback response for infinite loops
+        // Add fallback response for timeout/infinite loops using configuration
         updates.push({
-          agent: "System",
-          content:
-            "I'll provide some general healthy dinner recipes:\n\n" +
-            "1. Mediterranean Baked Salmon with roasted vegetables and quinoa\n" +
-            "2. Grilled Chicken with steamed broccoli and sweet potatoes\n" +
-            "3. Vegetable Stir-Fry with tofu and brown rice\n" +
-            "4. Turkey and Vegetable Chili\n" +
-            "5. Zucchini Noodles with lean protein and tomato sauce\n\n" +
-            "Would you like more specific details about any of these recipes?",
+          agent: FALLBACK_RESPONSES.timeout.agent,
+          content: FALLBACK_RESPONSES.timeout.getContent(),
+          topic: currentTopic,
         });
         break;
       }
@@ -252,9 +278,8 @@ export async function processMealPlannerInput(
   } catch (error) {
     console.error("Error processing input:", error);
     updates.push({
-      agent: "System",
-      content:
-        "Sorry, there was an error processing your request. Please try again.",
+      agent: FALLBACK_RESPONSES.error.agent,
+      content: FALLBACK_RESPONSES.error.content,
       topic: currentTopic,
     });
   }
