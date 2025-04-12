@@ -1,4 +1,4 @@
-import { Info, MessageSquare, Sparkles, Zap } from "lucide-react";
+import { MessageSquare, Sparkles, Zap } from "lucide-react";
 import { useChatStore } from "@/store/chat-store";
 
 /**
@@ -7,12 +7,8 @@ import { useChatStore } from "@/store/chat-store";
 export const EmptyChat = () => (
   <div className="flex flex-col items-center justify-center h-full overflow-y-auto py-8">
     <div className="w-full max-w-2xl mx-auto text-center px-4">
-      {/* Header with animated gradient */}
-      <div className="inline-flex items-center justify-center mb-6 p-4 bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 rounded-full animate-pulse">
-        <Sparkles className="h-10 w-10 text-blue-600 dark:text-blue-400" />
-      </div>
-
-      <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-3">
+      {/* Main heading */}
+      <h2 className="text-3xl font-bold text-gray-800 dark:text-gray-100 mb-3">
         Welcome to your AI Assistant
       </h2>
 
@@ -22,21 +18,21 @@ export const EmptyChat = () => (
       </p>
 
       {/* Feature cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mb-10">
         <FeatureCard
           icon={<MessageSquare className="h-5 w-5" />}
           title="Natural Conversations"
-          description="Chat naturally with an AI that understands context and nuance"
+          description="Chat naturally with context-aware AI"
         />
         <FeatureCard
           icon={<Zap className="h-5 w-5" />}
           title="Instant Responses"
-          description="Get immediate, accurate answers to your questions"
+          description="Get immediate, accurate answers"
         />
         <FeatureCard
-          icon={<Info className="h-5 w-5" />}
+          icon={<Sparkles className="h-5 w-5" />}
           title="Helpful Information"
-          description="Receive detailed explanations and useful insights"
+          description="Receive detailed insights and explanations"
         />
       </div>
 
@@ -45,7 +41,7 @@ export const EmptyChat = () => (
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
           Try asking:
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <SuggestedPrompt text="What is LangChain and how does it work?" />
           <SuggestedPrompt text="Can you explain how large language models process text?" />
           <SuggestedPrompt text="What are some common LLM use cases?" />
@@ -53,7 +49,7 @@ export const EmptyChat = () => (
         </div>
       </div>
 
-      <p className="text-sm text-gray-500 dark:text-gray-400 italic">
+      <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
         Type a message below to start chatting
       </p>
     </div>
@@ -72,8 +68,8 @@ const FeatureCard = ({
   title: string;
   description: string;
 }) => (
-  <div className="flex flex-col items-center p-4 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 dark:border-gray-700 hover:shadow-md transition-shadow">
-    <div className="bg-blue-50 dark:bg-blue-900 p-2 rounded-full mb-3 text-blue-600 dark:text-blue-400">
+  <div className="flex flex-col items-center p-5 bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 hover:shadow-sm transition-all">
+    <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-full mb-4 text-blue-600 dark:text-blue-400">
       {icon}
     </div>
     <h3 className="text-sm font-medium text-gray-800 dark:text-gray-200 mb-1">
@@ -90,7 +86,7 @@ const FeatureCard = ({
  */
 const SuggestedPrompt = ({ text }: { text: string }) => (
   <button
-    className="text-left p-2 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-sm text-gray-700 dark:text-gray-300 transition-colors border border-gray-200 dark:border-gray-700"
+    className="cursor-pointer text-left p-3 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-sm text-gray-700 dark:text-gray-300 transition-colors border border-gray-200 dark:border-gray-700 w-full"
     onClick={() => {
       const { setInput } = useChatStore.getState();
       setInput(text);
