@@ -114,8 +114,7 @@ export async function POST(req: NextRequest) {
       if (!threadConfig) {
         throw createApiError(
           "validation",
-          "Thread not found. Please start a new conversation.",
-          404
+          "Thread not found. Please start a new conversation."
         );
       }
 
