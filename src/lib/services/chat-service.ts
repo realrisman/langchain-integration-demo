@@ -1,4 +1,4 @@
-import { Message, MessageRole } from "@/components/chatbot/message-bubble";
+import { ChatMessage, MessageRole } from "@/types/chat";
 
 // Types
 export type ChatAPIRequest = {
@@ -25,7 +25,7 @@ export const ChatService = {
   /**
    * Formats messages for the API request
    */
-  formatMessagesForAPI(messages: Message[]): ChatAPIRequest {
+  formatMessagesForAPI(messages: ChatMessage[]): ChatAPIRequest {
     return {
       messages: messages.map(({ role, content }) => ({ role, content })),
     };
@@ -34,7 +34,7 @@ export const ChatService = {
   /**
    * Sends user messages to the API and returns the AI response
    */
-  async sendMessage(messages: Message[]): Promise<string> {
+  async sendMessage(messages: ChatMessage[]): Promise<string> {
     try {
       if (!messages.length) {
         throw new Error("No messages to send");
