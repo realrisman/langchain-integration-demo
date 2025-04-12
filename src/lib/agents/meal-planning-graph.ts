@@ -15,6 +15,52 @@ import {
 } from "./meal-planning-agents";
 
 /**
+ * Agent routing configuration for intent recognition
+ */
+const AGENT_INTENT_CONFIG = {
+  dietaryAdvisor: {
+    keywords: [
+      "dietary",
+      "diet",
+      "nutrition",
+      "nutritional",
+      "dietary advisor",
+      "weight loss",
+      "calories",
+      "healthy eating",
+    ],
+  },
+  groceryListBuilder: {
+    keywords: [
+      "grocery",
+      "groceries",
+      "shopping",
+      "list",
+      "buy",
+      "shopping list",
+      "purchase",
+      "store",
+    ],
+  },
+  foodInventory: {
+    keywords: [
+      "inventory",
+      "pantry",
+      "fridge",
+      "freezer",
+      "stock",
+      "have",
+      "available",
+      "ingredients",
+    ],
+  },
+  // Default agent
+  recipeSuggester: {
+    default: true,
+  },
+};
+
+/**
  * Creates and configures the meal planning multi-agent system
  */
 export function createMealPlanningGraph() {
@@ -59,14 +105,7 @@ export function createMealPlanningGraph() {
           if (msg.name && typeof msg.name === "string") {
             // Check if the name matches one of our agent nodes
             const agentName = msg.name;
-            if (
-              [
-                "recipeSuggester",
-                "dietaryAdvisor",
-                "groceryListBuilder",
-                "foodInventory",
-              ].includes(agentName)
-            ) {
+            if (Object.keys(AGENT_INTENT_CONFIG).includes(agentName)) {
               return agentName;
             }
           }
@@ -76,27 +115,27 @@ export function createMealPlanningGraph() {
       // If no previous agent found or this is a new conversation, check first message for intent
       const firstMessage = state.messages[0];
 
-      // Check if the first message contains keywords related to dietary advice
+      // Analyze message content for intent matching
       if (firstMessage.content && typeof firstMessage.content === "string") {
         const content = firstMessage.content.toLowerCase();
 
-        if (
-          content.includes("dietary") ||
-          content.includes("diet") ||
-          content.includes("nutrition") ||
-          content.includes("nutritional") ||
-          content.includes("dietary advisor") ||
-          content.includes("weight loss") ||
-          content.includes("calories") ||
-          content.includes("healthy eating")
-        ) {
-          return "dietaryAdvisor";
+        // Check each agent's keywords for a match
+        for (const [agentName, config] of Object.entries(AGENT_INTENT_CONFIG)) {
+          if (
+            "keywords" in config &&
+            config.keywords.some((keyword) => content.includes(keyword))
+          ) {
+            return agentName;
+          }
         }
       }
     }
 
-    // Default to recipe suggester for other queries
-    return "recipeSuggester";
+    // Return default agent if no match found
+    const defaultAgentEntry = Object.entries(AGENT_INTENT_CONFIG).find(
+      ([, config]) => "default" in config && config.default
+    );
+    return defaultAgentEntry?.[0] || "recipeSuggester";
   };
 
   // Add conditional edge from START to either recipeSuggester or dietaryAdvisor
