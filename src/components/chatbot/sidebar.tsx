@@ -2,13 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Home,
-  MessageSquare,
-  UtensilsCrossed,
-  Sparkles,
-  Lock,
-} from "lucide-react";
+import { Home, Sparkles, Lock, Bot, CookingPot } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type SidebarProps = {
@@ -66,7 +60,7 @@ export function Sidebar({
                 </div>
               </Link>
               <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
-                <MessageSquare className="h-5 w-5 min-w-5" />
+                <Bot className="h-5 w-5 min-w-5" />
                 <span className="text-sm font-medium">Chatbot</span>
               </div>
               <Link
@@ -82,7 +76,7 @@ export function Sidebar({
                       : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                   )}
                 >
-                  <UtensilsCrossed className="h-5 w-5 min-w-5" />
+                  <CookingPot className="h-5 w-5 min-w-5" />
                   <span className="text-sm font-medium">Meal Planner</span>
                 </div>
               </Link>
