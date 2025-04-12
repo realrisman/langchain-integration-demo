@@ -121,7 +121,9 @@ export async function POST(req: NextRequest) {
 
       // Create a command to resume the conversation
       const command = new Command({
-        resume: body.message,
+        resume: {
+          messages: [{ role: "user", content: body.message }],
+        },
       });
 
       // Process the user input with signal

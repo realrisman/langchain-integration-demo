@@ -5,6 +5,7 @@ import { useState, useRef, useEffect } from "react";
 type AgentUpdate = {
   agent: string;
   content: string;
+  topic?: string;
 };
 
 type MealPlannerResponse = {
@@ -16,8 +17,14 @@ export default function MealPlannerPage() {
   const [isLoading, setIsLoading] = useState(false);
   const [threadId, setThreadId] = useState<string | null>(null);
   const [messages, setMessages] = useState<
-    { role: "user" | "agent"; content: string; agent?: string }[]
+    {
+      role: "user" | "agent";
+      content: string;
+      agent?: string;
+      topic?: string;
+    }[]
   >([]);
+  const [currentTopic, setCurrentTopic] = useState<string | null>(null);
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -55,7 +62,10 @@ export default function MealPlannerPage() {
     if (!inputValue.trim() || isLoading) return;
 
     // Add user message to chat
-    setMessages((prev) => [...prev, { role: "user", content: inputValue }]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: inputValue, topic: currentTopic || undefined },
+    ]);
     setIsLoading(true);
 
     // Cancel any existing request
@@ -94,12 +104,18 @@ export default function MealPlannerPage() {
 
       // Add agent responses to chat
       data.updates.forEach((update) => {
+        // Update the current topic if provided
+        if (update.topic) {
+          setCurrentTopic(update.topic);
+        }
+
         setMessages((prev) => [
           ...prev,
           {
             role: "agent",
             content: update.content,
             agent: update.agent,
+            topic: update.topic,
           },
         ]);
       });

@@ -47,7 +47,7 @@ export function createMealPlanningGraph() {
         "foodInventory",
       ],
     })
-    // We'll always start with the recipe suggester as the entry point
+    // We'll default to starting with the recipe suggester
     .addEdge(START, "recipeSuggester");
 
   // Create memory saver for persistence
@@ -78,12 +78,23 @@ export async function processMealPlannerInput(
   threadConfig: ReturnType<typeof createThreadConfig>,
   signal?: AbortSignal
 ) {
-  const input =
-    typeof userInput === "string"
-      ? { messages: [{ role: "user", content: userInput }] }
-      : userInput;
+  // Format the input appropriately
+  let input;
+
+  if (typeof userInput === "string") {
+    // For new conversations, format a new user message
+    input = { messages: [{ role: "user", content: userInput }] };
+  } else {
+    // For existing conversations, pass the Command object directly
+    input = userInput;
+  }
 
   const updates = [];
+  let interactionCounter = 0;
+  const MAX_INTERACTIONS = 10; // Maximum number of agent interactions before forcing termination
+
+  // Track the current conversation topic
+  let currentTopic = "meal planning";
 
   // Add the signal to the config if provided
   const config = signal ? { ...threadConfig, signal } : threadConfig;
@@ -95,14 +106,38 @@ export async function processMealPlannerInput(
       break;
     }
 
+    // Increment interaction counter and check if we've exceeded the maximum
+    interactionCounter++;
+    if (interactionCounter > MAX_INTERACTIONS) {
+      // Add a fallback response for infinite loops
+      updates.push({
+        agent: "System",
+        content:
+          "I'll provide some general healthy dinner recipes:\n\n" +
+          "1. Mediterranean Baked Salmon with roasted vegetables and quinoa\n" +
+          "2. Grilled Chicken with steamed broccoli and sweet potatoes\n" +
+          "3. Vegetable Stir-Fry with tofu and brown rice\n" +
+          "4. Turkey and Vegetable Chili\n" +
+          "5. Zucchini Noodles with lean protein and tomato sauce\n\n" +
+          "Would you like more specific details about any of these recipes?",
+      });
+      break;
+    }
+
     const lastMessage = update.messages
       ? update.messages[update.messages.length - 1]
       : undefined;
 
-    if (lastMessage && lastMessage._getType() === "ai") {
+    if (lastMessage && lastMessage.constructor.name === "AIMessage") {
+      // Update the conversation topic if available
+      if (lastMessage.topic) {
+        currentTopic = lastMessage.topic;
+      }
+
       updates.push({
         agent: lastMessage.name,
         content: lastMessage.content,
+        topic: lastMessage.topic || currentTopic,
       });
     }
   }
