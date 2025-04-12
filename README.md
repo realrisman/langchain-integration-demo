@@ -1,49 +1,99 @@
 # LangChain Integration Demo
 
-This project demonstrates a simple chatbot implementation using LangChain and OpenAI.
-
-## Setup Instructions
-
-1. Clone this repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Add your OpenAI API key:
-
-   - Create a `.env.local` file at the root of the project
-   - Add your OpenAI API key: `OPENAI_API_KEY=your_openai_api_key_here`
-
-4. Run the development server:
-   ```bash
-   npm run dev
-   ```
-5. Open [http://localhost:3000](http://localhost:3000) in your browser to use the chatbot
+This is a Next.js application that demonstrates integration with LangChain, a framework for developing applications powered by language models. It features an AI chatbot and a meal planning system.
 
 ## Features
 
-- Simple chat interface for interacting with an AI assistant
-- Uses LangChain to manage conversation history and model interactions
-- Built with Next.js and TypeScript
+- Interactive AI chatbot using LangChain and OpenAI
+- Multi-agent meal planning system
+- Modern UI with Tailwind CSS and shadcn/ui components
+- Server components architecture with NextJS App Router
+
+## Tech Stack
+
+- [Next.js](https://nextjs.org/)
+- [React](https://reactjs.org/)
+- [TypeScript](https://www.typescriptlang.org/)
+- [LangChain](https://js.langchain.com/docs/)
+- [Tailwind CSS](https://tailwindcss.com/)
+- [shadcn/ui](https://ui.shadcn.com/)
 
 ## Project Structure
 
-- `src/app/page.tsx`: The main chatbot UI component
-- `src/app/api/chat/route.ts`: API endpoint that uses LangChain to interact with OpenAI
+The project follows a modular architecture with clear separation of concerns:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```
+src/
+├── app/                  # Next.js App Router
+│   ├── api/              # API routes
+│   ├── chatbot/          # Chatbot page
+│   ├── meal-planner/     # Meal planner page
+│   ├── layout.tsx        # Root layout
+│   └── page.tsx          # Home page
+├── components/           # React components
+│   ├── chatbot/          # Chatbot-specific components
+│   ├── home/             # Home page components
+│   └── ui/               # UI components (shadcn)
+└── lib/                  # Utilities and services
+    ├── api/              # API utilities
+    └── services/         # Service layer
+```
 
-## Learn More
+## Code Architecture
 
-To learn more about Next.js, take a look at the following resources:
+The codebase follows these principles:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **React Server Components**: Leveraging Next.js RSC for performance
+- **Modular Components**: Small, focused components with single responsibilities
+- **Custom Hooks**: Extracting stateful logic into reusable hooks
+- **Service Layer Pattern**: Separating business logic from UI components
+- **Proper Error Handling**: Comprehensive error handling at every layer
+- **Type Safety**: Full TypeScript implementation with proper interface definitions
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Getting Started
 
-## Deploy on Vercel
+### Prerequisites
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Node.js 18+ and npm
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### Installation
+
+1. Clone the repository:
+
+   ```
+   git clone https://github.com/yourusername/langchain-integration-demo.git
+   cd langchain-integration-demo
+   ```
+
+2. Install dependencies:
+
+   ```
+   npm install
+   ```
+
+3. Create a `.env.local` file in the root directory with the following variables:
+
+   ```
+   OPENAI_API_KEY=your_openai_api_key
+   ```
+
+4. Start the development server:
+
+   ```
+   npm run dev
+   ```
+
+5. Open [http://localhost:3000](http://localhost:3000) to view the application.
+
+## Development Guidelines
+
+- Follow the established component patterns when adding new features
+- Create new components in the appropriate directories
+- Use custom hooks for shared stateful logic
+- Implement proper error handling
+- Write useful comments and documentation
+- Follow the TypeScript patterns established in the codebase
+
+## License
+
+[MIT](LICENSE)
