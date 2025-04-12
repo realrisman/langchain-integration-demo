@@ -68,7 +68,6 @@ export default function MealPlannerPage() {
               setInputValue={setInputValue}
               handleSubmit={handleSubmit}
               isLoading={isLoading}
-              inputRef={inputRef}
             />
           </div>
         </div>
