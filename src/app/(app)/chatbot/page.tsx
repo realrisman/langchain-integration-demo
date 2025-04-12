@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,89 +14,33 @@ import {
   Lock,
 } from "lucide-react";
 import {
-  Message,
   MessageBubble,
   LoadingIndicator,
   EmptyChat,
 } from "@/components/chatbot";
-import { ChatService } from "@/lib/services/chat-service";
 import {
   HoverCard,
   HoverCardContent,
   HoverCardTrigger,
 } from "@/components/ui/hover-card";
 import { cn } from "@/lib/utils";
+import { useChatStore } from "@/store/chat-store";
+import { useState } from "react";
 
 /**
- * Hook for managing chat state and interactions
+ * ChatbotPage - Interactive AI chatbot interface
  */
-const useChat = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const addMessage = (message: Omit<Message, "timestamp">) => {
-    const newMessage: Message = {
-      ...message,
-      timestamp: new Date(),
-    };
-    setMessages((prev) => [...prev, newMessage]);
-    return newMessage;
-  };
-
-  const sendMessage = async (content: string) => {
-    if (!content.trim()) return;
-
-    setError(null);
-    const userMessage = addMessage({
-      role: "user",
-      content: content.trim(),
-    });
-
-    setInput("");
-    setIsLoading(true);
-
-    try {
-      // Send to API via service
-      const newMessages = [...messages, userMessage];
-      const response = await ChatService.sendMessage(newMessages);
-
-      // Add assistant's response
-      addMessage({
-        role: "assistant",
-        content: response,
-      });
-    } catch (err) {
-      console.error("Error sending message:", err);
-      setError(err instanceof Error ? err.message : "Failed to send message");
-
-      // Add error message
-      addMessage({
-        role: "assistant",
-        content: "Sorry, I encountered an error. Please try again.",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return {
+export default function ChatbotPage() {
+  const {
     messages,
     input,
     setInput,
     isLoading,
     error,
     sendMessage,
-  };
-};
+    resetChat,
+  } = useChatStore();
 
-/**
- * ChatbotPage - Interactive AI chatbot interface
- */
-export default function ChatbotPage() {
-  const { messages, input, setInput, isLoading, error, sendMessage } =
-    useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
@@ -226,34 +170,46 @@ export default function ChatbotPage() {
               </div>
             </div>
 
-            <HoverCard>
-              <HoverCardTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <Info className="h-4 w-4" />
-                  <span className="sr-only">Info</span>
+            <div className="flex items-center gap-2">
+              {messages.length > 0 && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={resetChat}
+                  className="text-xs"
+                >
+                  Reset Chat
                 </Button>
-              </HoverCardTrigger>
-              <HoverCardContent className="w-80">
-                <div className="space-y-2">
-                  <h4 className="text-sm font-semibold">
-                    About this assistant
-                  </h4>
-                  <p className="text-sm text-muted-foreground">
-                    This AI assistant is built using LangChain and OpenAI to
-                    provide intelligent responses to your questions.
-                  </p>
-                  <Separator />
-                  <div className="text-xs text-muted-foreground space-y-1">
-                    <p>Model: GPT-3.5 Turbo</p>
-                    <p>Architecture: LangChain + OpenAI</p>
-                    <p>
-                      Features: Context-aware responses, natural language
-                      understanding
+              )}
+              <HoverCard>
+                <HoverCardTrigger asChild>
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Info className="h-4 w-4" />
+                    <span className="sr-only">Info</span>
+                  </Button>
+                </HoverCardTrigger>
+                <HoverCardContent className="w-80">
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-semibold">
+                      About this assistant
+                    </h4>
+                    <p className="text-sm text-muted-foreground">
+                      This AI assistant is built using LangChain and OpenAI to
+                      provide intelligent responses to your questions.
                     </p>
+                    <Separator />
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>Model: GPT-3.5 Turbo</p>
+                      <p>Architecture: LangChain + OpenAI</p>
+                      <p>
+                        Features: Context-aware responses, natural language
+                        understanding
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </HoverCardContent>
-            </HoverCard>
+                </HoverCardContent>
+              </HoverCard>
+            </div>
           </div>
         </header>
 
