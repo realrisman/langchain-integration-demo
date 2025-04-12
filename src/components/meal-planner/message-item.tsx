@@ -2,8 +2,7 @@ import React, { memo } from "react";
 import { cn } from "@/lib/utils";
 import { Message } from "@/types/meal-planner";
 import { getAgentInfo } from "@/data/meal-planner";
-import ReactMarkdown from "react-markdown";
-import type { Components } from "react-markdown";
+import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
 
 interface MessageItemProps {
   message: Message;
@@ -15,65 +14,6 @@ interface MessageItemProps {
 const MessageItemComponent = ({ message }: MessageItemProps) => {
   const agentInfo = message.agent ? getAgentInfo(message.agent) : null;
   const isUserMessage = message.role === "user";
-
-  // Define markdown components with proper TypeScript types
-  const markdownComponents: Components = {
-    p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-    ul: ({ children }) => (
-      <ul className="list-disc pl-4 mb-2 space-y-1">{children}</ul>
-    ),
-    ol: ({ children }) => (
-      <ol className="list-decimal pl-4 mb-2 space-y-1">{children}</ol>
-    ),
-    li: ({ children }) => <li className="mb-1">{children}</li>,
-    h1: ({ children }) => (
-      <h1 className="text-lg font-semibold mt-3 mb-2">{children}</h1>
-    ),
-    h2: ({ children }) => (
-      <h2 className="text-md font-semibold mt-3 mb-2">{children}</h2>
-    ),
-    h3: ({ children }) => (
-      <h3 className="text-sm font-semibold mt-2 mb-1">{children}</h3>
-    ),
-    // @ts-expect-error - The ReactMarkdown types don't fully match the actual props passed
-    code: ({ inline, children, ...props }) => {
-      if (inline) {
-        return (
-          <code
-            className="px-1 py-0.5 rounded bg-slate-100 text-slate-800 text-xs font-mono"
-            {...props}
-          >
-            {children}
-          </code>
-        );
-      }
-      return (
-        <pre className="p-3 rounded-md bg-slate-100 mb-2 overflow-x-auto">
-          <code className="text-xs text-slate-800 font-mono" {...props}>
-            {children}
-          </code>
-        </pre>
-      );
-    },
-    table: ({ children }) => (
-      <div className="overflow-x-auto mb-2">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
-          {children}
-        </table>
-      </div>
-    ),
-    thead: ({ children }) => <thead className="bg-slate-50">{children}</thead>,
-    tbody: ({ children }) => (
-      <tbody className="divide-y divide-slate-100">{children}</tbody>
-    ),
-    tr: ({ children }) => <tr>{children}</tr>,
-    th: ({ children }) => (
-      <th className="px-3 py-2 text-left text-xs font-medium text-slate-500 uppercase tracking-wider">
-        {children}
-      </th>
-    ),
-    td: ({ children }) => <td className="px-3 py-2">{children}</td>,
-  };
 
   return (
     <div
@@ -126,11 +66,7 @@ const MessageItemComponent = ({ message }: MessageItemProps) => {
             {message.content}
           </div>
         ) : (
-          <div className="prose prose-slate prose-sm max-w-none dark:prose-invert">
-            <ReactMarkdown components={markdownComponents}>
-              {message.content}
-            </ReactMarkdown>
-          </div>
+          <MarkdownRenderer content={message.content} />
         )}
 
         {/* Timestamp if available */}
