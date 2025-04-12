@@ -1,26 +1,13 @@
 import { formatDistanceToNow } from "date-fns";
 import { Bot, User } from "lucide-react";
 import { MarkdownRenderer } from "@/components/ui/markdown-renderer";
-
-/**
- * Message role type
- */
-export type MessageRole = "user" | "assistant";
-
-/**
- * Message structure
- */
-export interface Message {
-  role: MessageRole;
-  content: string;
-  timestamp: Date;
-}
+import { ChatMessage } from "@/types/chat";
 
 /**
  * Props for the MessageBubble component
  */
 interface MessageBubbleProps {
-  message: Message;
+  message: ChatMessage;
 }
 
 /**
