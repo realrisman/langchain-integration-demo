@@ -21,12 +21,13 @@ const MessageItemComponent = ({ message }: MessageItemProps) => {
     >
       <div
         className={cn(
-          "max-w-[85%] rounded-xl shadow-sm p-4",
+          "max-w-[85%] rounded-xl shadow-sm p-4 backdrop-blur-sm",
           isUserMessage
-            ? "bg-blue-600 text-white rounded-tr-none"
+            ? "bg-indigo-600/90 text-white rounded-tr-none"
             : cn(
-                agentInfo?.style.bg || "bg-white",
-                agentInfo?.style.border || "border border-slate-200",
+                agentInfo?.style.bg || "bg-white/90 dark:bg-slate-800/90",
+                agentInfo?.style.border ||
+                  "border border-slate-200/80 dark:border-slate-700/80",
                 "rounded-tl-none"
               )
         )}
@@ -37,7 +38,7 @@ const MessageItemComponent = ({ message }: MessageItemProps) => {
           <div className={cn("flex items-center mb-2", agentInfo.style.text)}>
             <div
               className={cn(
-                "h-6 w-6 rounded-full mr-2 flex items-center justify-center",
+                "h-6 w-6 rounded-full mr-2 flex items-center justify-center backdrop-blur-sm",
                 agentInfo.style.iconBg
               )}
             >
@@ -53,7 +54,7 @@ const MessageItemComponent = ({ message }: MessageItemProps) => {
             </div>
             <span className="text-sm font-medium">{agentInfo.name}</span>
             {message.topic && (
-              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+              <span className="ml-2 text-xs px-2 py-0.5 rounded-full bg-slate-100/80 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 backdrop-blur-sm">
                 {message.topic}
               </span>
             )}
