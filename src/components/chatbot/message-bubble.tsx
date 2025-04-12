@@ -33,7 +33,7 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
     <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
       {/* Avatar */}
       <div
-        className={`flex-shrink-0 rounded-full p-2 ${
+        className={`h-10 w-10 flex items-center justify-center flex-shrink-0 rounded-full ${
           isUser ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600"
         }`}
       >
