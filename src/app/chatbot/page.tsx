@@ -13,68 +13,95 @@ import {
 } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Bot, Loader2, Send } from "lucide-react";
-import { Message, MessageBubble } from "@/components/chatbot/message-bubble";
-import { LoadingIndicator } from "@/components/chatbot/loading-indicator";
-import { EmptyChat } from "@/components/chatbot/empty-chat";
+import {
+  Message,
+  MessageBubble,
+  LoadingIndicator,
+  EmptyChat,
+} from "@/components/chatbot";
 import { ChatService } from "@/lib/services/chat-service";
 
 /**
- * ChatbotPage - Interactive AI chatbot interface
+ * Hook for managing chat state and interactions
  */
-export default function ChatbotPage() {
-  // State
+const useChat = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  // Effects
-  useEffect(() => {
-    // Auto-scroll to bottom when messages change
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Handlers
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!input.trim()) return;
-
-    // Add user message to the chat
-    const userMessage: Message = {
-      role: "user",
-      content: input.trim(),
+  const addMessage = (message: Omit<Message, "timestamp">) => {
+    const newMessage: Message = {
+      ...message,
       timestamp: new Date(),
     };
-    const newMessages = [...messages, userMessage];
-    setMessages(newMessages);
+    setMessages((prev) => [...prev, newMessage]);
+    return newMessage;
+  };
+
+  const sendMessage = async (content: string) => {
+    if (!content.trim()) return;
+
+    setError(null);
+    const userMessage = addMessage({
+      role: "user",
+      content: content.trim(),
+    });
+
     setInput("");
     setIsLoading(true);
 
     try {
       // Send to API via service
+      const newMessages = [...messages, userMessage];
       const response = await ChatService.sendMessage(newMessages);
 
-      // Add assistant's response to the chat
-      const assistantMessage: Message = {
+      // Add assistant's response
+      addMessage({
         role: "assistant",
         content: response,
-        timestamp: new Date(),
-      };
-      setMessages([...newMessages, assistantMessage]);
-    } catch (error) {
-      console.error("Error sending message:", error);
+      });
+    } catch (err) {
+      console.error("Error sending message:", err);
+      setError(err instanceof Error ? err.message : "Failed to send message");
 
-      // Add error message to chat
-      const errorMessage: Message = {
+      // Add error message
+      addMessage({
         role: "assistant",
         content: "Sorry, I encountered an error. Please try again.",
-        timestamp: new Date(),
-      };
-      setMessages([...newMessages, errorMessage]);
+      });
     } finally {
       setIsLoading(false);
     }
+  };
+
+  return {
+    messages,
+    input,
+    setInput,
+    isLoading,
+    error,
+    sendMessage,
+  };
+};
+
+/**
+ * ChatbotPage - Interactive AI chatbot interface
+ */
+export default function ChatbotPage() {
+  const { messages, input, setInput, isLoading, error, sendMessage } =
+    useChat();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendMessage(input);
   };
 
   return (
@@ -108,6 +135,11 @@ export default function ChatbotPage() {
                   ))}
 
                   {isLoading && <LoadingIndicator />}
+                  {error && (
+                    <div className="p-2 text-sm text-red-500 bg-red-50 rounded-md">
+                      {error}
+                    </div>
+                  )}
                   <div ref={messagesEndRef} />
                 </div>
               </div>
