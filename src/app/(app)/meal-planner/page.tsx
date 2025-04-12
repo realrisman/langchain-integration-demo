@@ -38,14 +38,17 @@ export default function MealPlannerPage() {
   }, [cancelRequest]);
 
   return (
-    <div className="fixed inset-0 flex flex-col w-full h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
-      {/* Glass Morphism Header with Navigation */}
-      <header className="relative z-10 py-3 px-4 backdrop-blur-sm bg-white/70 dark:bg-slate-900/70 border-b border-slate-200 dark:border-slate-700">
-        <div className=" mx-auto flex items-center justify-between">
-          <div className="flex items-center">
+    <div className="fixed inset-0 flex flex-col w-full h-screen bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-100 via-slate-50 to-white dark:from-indigo-950/30 dark:via-slate-900 dark:to-slate-950">
+      {/* Header with glass morphism effect */}
+      <header className="relative z-10 py-3 px-4 backdrop-blur-md bg-white/80 dark:bg-slate-900/80 border-b border-slate-200/50 dark:border-slate-800/50 shadow-sm">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center space-x-2">
             <h1 className="text-2xl md:text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
-              LangChain Meal Planner
+              Meal Planner
             </h1>
+            <span className="hidden md:inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-indigo-800 dark:text-indigo-300">
+              Powered by LangChain
+            </span>
           </div>
 
           {/* Navigation */}
@@ -85,18 +88,25 @@ export default function MealPlannerPage() {
       </header>
 
       {/* Main Content Area with Dynamic Height */}
-      <div className="flex-1 flex overflow-hidden">
-        <div className="w-full h-full max-w-screen-2xl mx-auto flex flex-col lg:flex-row">
-          {/* Sidebar */}
-          <div className="lg:w-80 xl:w-96 p-3 lg:h-full overflow-hidden flex flex-col">
-            <div className="h-full overflow-auto scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 pr-2">
+      <div className="flex-1 flex overflow-hidden relative">
+        {/* Decorative elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none z-0">
+          <div className="absolute top-20 right-[10%] w-72 h-72 bg-purple-300/20 dark:bg-purple-600/10 rounded-full filter blur-3xl"></div>
+          <div className="absolute bottom-20 left-[5%] w-72 h-72 bg-indigo-300/20 dark:bg-indigo-600/10 rounded-full filter blur-3xl"></div>
+          <div className="absolute -top-10 -left-10 w-72 h-72 bg-blue-300/10 dark:bg-blue-600/5 rounded-full filter blur-3xl"></div>
+        </div>
+
+        <div className="w-full h-full max-w-screen-2xl mx-auto flex flex-col lg:flex-row p-3 lg:p-5 gap-4 z-10">
+          {/* Sidebar - collapsible on mobile */}
+          <div className="lg:w-80 xl:w-96 lg:h-full overflow-hidden flex flex-col animate-fade-right animate-duration-500">
+            <div className="h-full overflow-auto pr-1 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700 scrollbar-track-transparent">
               <AgentInfoCard />
             </div>
           </div>
 
           {/* Chat Area */}
-          <div className="flex-1 p-3 flex flex-col h-full min-h-0">
-            <div className="flex-1 h-full overflow-hidden flex flex-col rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+          <div className="flex-1 flex flex-col h-full min-h-0 animate-fade-up animate-duration-500">
+            <div className="flex-1 h-full overflow-hidden flex flex-col rounded-xl shadow-lg border border-slate-200/70 dark:border-slate-800/70 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm">
               <ChatInterface
                 messages={messages}
                 messagesEndRef={messagesEndRef}
