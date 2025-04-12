@@ -57,6 +57,12 @@ export default function RootLayout({
               >
                 Chatbot
               </Link>
+              <Link
+                href="/meal-planner"
+                className="hover:text-blue-600 transition-colors"
+              >
+                Meal Planner
+              </Link>
             </div>
           </div>
         </nav>

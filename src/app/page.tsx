@@ -132,7 +132,7 @@ const HeroSection = () => (
           variant="default"
           className="bg-blue-700 hover:bg-blue-800 font-medium"
         >
-          <Link href="#coming-soon">Meal Planning (Coming Soon)</Link>
+          <Link href="/meal-planner">Try the Meal Planner</Link>
         </Button>
       </div>
     </div>
@@ -208,9 +208,25 @@ const FeaturesSection = () => {
       description:
         "Multi-agent system that helps plan meals, suggests recipes, and builds grocery lists based on your preferences.",
       actionElement: (
-        <Badge variant="secondary" className="text-gray-500">
-          Coming Soon
-        </Badge>
+        <Button asChild variant="link" className="pl-0">
+          <Link href="/meal-planner">
+            Try it out
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4 ml-1"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </Link>
+        </Button>
       ),
       iconBgClass: "bg-green-100",
       iconTextClass: "text-green-600",
