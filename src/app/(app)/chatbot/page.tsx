@@ -2,17 +2,9 @@
 
 import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import {
-  CornerDownLeft,
-  Info,
-  Loader2,
-  Send,
-  Sparkles,
-  Lock,
-} from "lucide-react";
+import { Info, Loader2, Send, Sparkles, Lock } from "lucide-react";
 import {
   MessageBubble,
   LoadingIndicator,
@@ -42,7 +34,7 @@ export default function ChatbotPage() {
   } = useChatStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
 
   // Auto-scroll to bottom when messages change
@@ -52,18 +44,46 @@ export default function ChatbotPage() {
 
   // Focus input on load
   useEffect(() => {
-    inputRef.current?.focus();
+    textareaRef.current?.focus();
   }, []);
+
+  // Auto-resize textarea based on content
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const adjustHeight = () => {
+      textarea.style.height = "auto";
+      const newHeight = Math.min(textarea.scrollHeight, 160);
+      textarea.style.height = `${newHeight}px`;
+    };
+
+    textarea.addEventListener("input", adjustHeight);
+    adjustHeight(); // Initial adjustment
+
+    return () => {
+      textarea.removeEventListener("input", adjustHeight);
+    };
+  }, [input]);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!input.trim()) return;
+
     await sendMessage(input);
+
+    // Reset textarea height after sending
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+    }
   };
 
   // Handle keyboard shortcut
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
       handleSubmit(e);
     }
   };
@@ -123,7 +143,7 @@ export default function ChatbotPage() {
           </div>
 
           {/* Sidebar footer - aligned with input area */}
-          <div className="h-16 min-h-16 border-t border-gray-200 dark:border-gray-800 flex items-center px-4">
+          <div className="h-24 min-h-24 border-t border-gray-200 dark:border-gray-800 flex items-center px-4">
             <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
               <Lock className="h-3.5 w-3.5" />
               <span>All conversations are private and secure</span>
@@ -133,7 +153,7 @@ export default function ChatbotPage() {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 flex flex-col h-full overflow-hidden w-full">
+      <main className="flex-1 flex flex-col h-full overflow-hidden w-full relative">
         {/* Chat header */}
         <header className="h-16 min-h-16 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center px-4">
           <div className="flex items-center justify-between w-full">
@@ -214,7 +234,7 @@ export default function ChatbotPage() {
         </header>
 
         {/* Chat messages */}
-        <div className="flex-1 overflow-hidden relative bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900">
+        <div className="flex-1 overflow-hidden relative bg-gradient-to-b from-gray-50 to-white dark:from-gray-950 dark:to-gray-900 pb-32">
           {messages.length === 0 ? (
             <EmptyChat />
           ) : (
@@ -239,47 +259,64 @@ export default function ChatbotPage() {
           )}
         </div>
 
-        {/* Input area - aligned with sidebar footer */}
-        <div className="h-16 min-h-16 border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center px-4">
+        {/* Floating input area */}
+        <div className="absolute bottom-4 left-0 right-0 px-4 z-10">
           <form
             onSubmit={handleSubmit}
-            className="flex gap-3 w-full max-w-4xl mx-auto"
+            className="flex gap-3 w-full max-w-3xl mx-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur-lg rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700/50 p-4 transition-all duration-200 ease-in-out hover:shadow-2xl"
           >
-            <Input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Type your message..."
-              className="flex-1 bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-              disabled={isLoading}
-            />
-            <Button
-              type="submit"
-              disabled={isLoading || !input.trim()}
-              className="gap-2 bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-600 text-white"
-            >
-              {isLoading ? (
-                <>
+            {/* Custom styled textarea container */}
+            <div className="relative flex-1 min-h-10 group">
+              <div className="w-full min-h-[40px] max-h-[160px] overflow-y-auto">
+                <textarea
+                  ref={textareaRef as React.RefObject<HTMLTextAreaElement>}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your message... (Shift + Enter for new line)"
+                  className="w-full min-h-[40px] bg-transparent border-none shadow-none outline-none resize-none p-0 text-gray-800 dark:text-gray-200 placeholder:text-gray-400 dark:placeholder:text-gray-500 font-inherit leading-relaxed"
+                  disabled={isLoading}
+                  rows={1}
+                  style={{
+                    fontFamily: "inherit",
+                    fontSize: "0.9375rem",
+                  }}
+                />
+              </div>
+              {/* Subtle gradient border animation on focus */}
+              <div className="absolute -bottom-[2px] left-0 right-0 h-[2px] bg-gradient-to-r from-blue-400 via-indigo-500 to-violet-500 rounded-full opacity-0 transition-opacity duration-300 group-focus-within:opacity-70"></div>
+            </div>
+            <div className="flex flex-col justify-end">
+              <Button
+                type="submit"
+                disabled={isLoading || !input.trim()}
+                className="rounded-full w-11 h-11 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 dark:from-blue-600 dark:to-indigo-700 dark:hover:from-blue-500 dark:hover:to-indigo-600 text-white shadow-md hover:shadow-lg transition-all duration-200 hover:scale-105"
+                size="icon"
+              >
+                {isLoading ? (
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  <span className="sr-only sm:not-sr-only sm:inline-block">
-                    Sending
-                  </span>
-                </>
-              ) : (
-                <>
-                  <span className="sr-only sm:not-sr-only sm:inline-block">
-                    Send
-                  </span>
+                ) : (
                   <Send className="h-4 w-4" />
-                </>
-              )}
-            </Button>
-            <div className="hidden md:flex items-center border rounded px-2 py-1 bg-gray-50 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs gap-1">
-              <CornerDownLeft className="h-3 w-3" />
-              <span>Enter</span>
+                )}
+                <span className="sr-only">Send message</span>
+              </Button>
             </div>
           </form>
+
+          {/* Keyboard hint */}
+          <div className="flex justify-center mt-3">
+            <div className="hidden md:flex items-center text-gray-500 dark:text-gray-400 text-xs gap-1 bg-white/80 dark:bg-gray-800/80 px-3 py-1.5 rounded-full shadow-sm backdrop-blur-sm">
+              <span>Press</span>
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 font-mono text-[10px]">
+                Shift
+              </kbd>
+              <span>+</span>
+              <kbd className="px-1.5 py-0.5 bg-gray-100 dark:bg-gray-700 rounded border border-gray-200 dark:border-gray-600 font-mono text-[10px]">
+                Enter
+              </kbd>
+              <span>for a new line</span>
+            </div>
+          </div>
         </div>
       </main>
 
