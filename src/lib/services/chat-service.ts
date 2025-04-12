@@ -18,30 +18,51 @@ export type ChatAPIResponse = {
  */
 export const ChatService = {
   /**
+   * Base URL for chat API
+   */
+  baseUrl: "/api/chat",
+
+  /**
+   * Formats messages for the API request
+   */
+  formatMessagesForAPI(messages: Message[]): ChatAPIRequest {
+    return {
+      messages: messages.map(({ role, content }) => ({ role, content })),
+    };
+  },
+
+  /**
    * Sends user messages to the API and returns the AI response
    */
   async sendMessage(messages: Message[]): Promise<string> {
     try {
-      const response = await fetch("/api/chat", {
+      if (!messages.length) {
+        throw new Error("No messages to send");
+      }
+
+      const response = await fetch(this.baseUrl, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          messages: messages.map(({ role, content }) => ({ role, content })),
-        } as ChatAPIRequest),
+        body: JSON.stringify(this.formatMessagesForAPI(messages)),
       });
 
-      const data = (await response.json()) as ChatAPIResponse;
-
       if (!response.ok) {
-        throw new Error(data.error || "Failed to get response");
+        const errorData = (await response.json()) as ChatAPIResponse;
+        throw new Error(
+          errorData.error || `Error ${response.status}: ${response.statusText}`
+        );
       }
 
+      const data = (await response.json()) as ChatAPIResponse;
       return data.response;
     } catch (error) {
       console.error("Error in chat service:", error);
-      throw error;
+      if (error instanceof Error) {
+        throw new Error(`Failed to get response: ${error.message}`);
+      }
+      throw new Error("Failed to get response from AI service");
     }
   },
 };
