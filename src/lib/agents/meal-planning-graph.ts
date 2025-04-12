@@ -46,9 +46,38 @@ export function createMealPlanningGraph() {
         "groceryListBuilder",
         "foodInventory",
       ],
-    })
-    // We'll default to starting with the recipe suggester
-    .addEdge(START, "recipeSuggester");
+    });
+
+  // Define routing function for entry point
+  const routeInitialNode = (state: typeof MessagesAnnotation.State) => {
+    if (state.messages && state.messages.length > 0) {
+      const firstMessage = state.messages[0];
+
+      // Check if the first message contains keywords related to dietary advice
+      if (firstMessage.content && typeof firstMessage.content === "string") {
+        const content = firstMessage.content.toLowerCase();
+
+        if (
+          content.includes("dietary") ||
+          content.includes("diet") ||
+          content.includes("nutrition") ||
+          content.includes("nutritional") ||
+          content.includes("dietary advisor")
+        ) {
+          return "dietaryAdvisor";
+        }
+      }
+    }
+
+    // Default to recipe suggester for other queries
+    return "recipeSuggester";
+  };
+
+  // Add conditional edge from START to either recipeSuggester or dietaryAdvisor
+  builder.addConditionalEdges(START, routeInitialNode, [
+    "recipeSuggester",
+    "dietaryAdvisor",
+  ]);
 
   // Create memory saver for persistence
   const checkpointer = new MemorySaver();

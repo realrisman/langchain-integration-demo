@@ -119,7 +119,8 @@ export async function recipeSuggester(
   state: typeof MessagesAnnotation.State
 ): Promise<Command> {
   const systemPrompt =
-    "You are a recipe expert that can recommend meals based on user preferences, dietary needs, and available ingredients. " +
+    "You are a recipe expert named 'Recipe Suggester' that can recommend meals based on user preferences, dietary needs, and available ingredients. " +
+    "IMPORTANT: Always identify yourself as 'Recipe Suggester' at the beginning of your response. " +
     "When a user asks for more details about a specific recipe you previously mentioned, provide them with detailed instructions, ingredients, and cooking tips for that recipe. " +
     "If the user asks for 'healthy recipes' without specifying preferences, provide general healthy recipe options rather than asking for more details. " +
     "If you need specific dietary advice, ask 'dietaryAdvisor' for help. " +
@@ -161,7 +162,8 @@ export async function dietaryAdvisor(
   state: typeof MessagesAnnotation.State
 ): Promise<Command> {
   const systemPrompt =
-    "You are a nutrition expert that can provide dietary advice based on health goals and restrictions. " +
+    "You are a nutrition expert named 'Dietary Advisor' that can provide dietary advice based on health goals and restrictions. " +
+    "IMPORTANT: Always identify yourself as 'Dietary Advisor' at the beginning of your response. " +
     "Pay attention to the conversation history to provide consistent advice that builds on previous exchanges. " +
     "If the user asks for 'healthy recipes' without specifying preferences, provide general nutritional advice rather than repeatedly asking for more details. " +
     "If you need meal recommendations, ask 'recipeSuggester' for help. " +
@@ -207,7 +209,8 @@ export async function groceryListBuilder(
   state: typeof MessagesAnnotation.State
 ): Promise<Command> {
   const systemPrompt =
-    "You are a grocery expert that can create shopping lists based on recipes and meal plans. " +
+    "You are a grocery expert named 'Grocery List Builder' that can create shopping lists based on recipes and meal plans. " +
+    "IMPORTANT: Always identify yourself as 'Grocery List Builder' at the beginning of your response. " +
     "Pay close attention to recipes and ingredients mentioned earlier in the conversation to create comprehensive lists. " +
     "If you need meal recommendations, ask 'recipeSuggester' for help. " +
     "If you need dietary advice, ask 'dietaryAdvisor' for help. " +
@@ -248,7 +251,8 @@ export async function foodInventory(
   state: typeof MessagesAnnotation.State
 ): Promise<Command> {
   const systemPrompt =
-    "You are an inventory manager that tracks available ingredients and suggests using existing items. " +
+    "You are an inventory manager named 'Food Inventory' that tracks available ingredients and suggests using existing items. " +
+    "IMPORTANT: Always identify yourself as 'Food Inventory' at the beginning of your response. " +
     "Reference the conversation history to understand what recipes and ingredients have been discussed. " +
     "If you need meal recommendations, ask 'recipeSuggester' for help. " +
     "If you need dietary advice, ask 'dietaryAdvisor' for help. " +
@@ -305,6 +309,24 @@ export function humanNode(state: typeof MessagesAnnotation.State): Command {
       }
     }
 
+    // Check if this user message should change the agent
+    if (typeof lastMessage.content === "string") {
+      const content = lastMessage.content.toLowerCase();
+
+      // Check for dietary/nutrition related queries
+      if (
+        content.includes("dietary") ||
+        content.includes("diet") ||
+        content.includes("nutrition") ||
+        content.includes("nutritional") ||
+        content.includes("dietary advisor")
+      ) {
+        return new Command({
+          goto: "dietaryAdvisor",
+        });
+      }
+    }
+
     // Default to recipe suggester if no active agent is found
     return new Command({
       goto: activeAgent || "recipeSuggester",
@@ -313,6 +335,30 @@ export function humanNode(state: typeof MessagesAnnotation.State): Command {
 
   // Only interrupt if we need user input (this should never be reached in an API context)
   const userInput: string = interrupt("Ready for user input.");
+
+  // Check if this user input should change the agent
+  if (typeof userInput === "string") {
+    const content = userInput.toLowerCase();
+
+    // Check for dietary/nutrition related queries
+    if (
+      content.includes("dietary") ||
+      content.includes("diet") ||
+      content.includes("nutrition") ||
+      content.includes("nutritional") ||
+      content.includes("dietary advisor")
+    ) {
+      const message = {
+        role: "user",
+        content: userInput,
+      };
+
+      return new Command({
+        goto: "dietaryAdvisor",
+        update: { messages: [message] },
+      });
+    }
+  }
 
   let activeAgent: string | undefined = undefined;
 
