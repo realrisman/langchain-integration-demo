@@ -1,5 +1,10 @@
 import React from "react";
-import type { FormEvent, KeyboardEvent, ChangeEvent } from "react";
+import type {
+  FormEvent,
+  KeyboardEvent,
+  ChangeEvent,
+  MutableRefObject,
+} from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -11,6 +16,7 @@ interface ChatInputFormProps {
   setInputValue: (value: string) => void;
   handleSubmit: (e: FormEvent) => Promise<void>;
   isLoading: boolean;
+  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement>;
 }
 
 export const ChatInputForm: React.FC<ChatInputFormProps> = ({
@@ -18,6 +24,7 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({
   setInputValue,
   handleSubmit,
   isLoading,
+  inputRef,
 }) => {
   // Handle key press events
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -37,13 +44,21 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({
     <form onSubmit={handleSubmit} className="w-full flex items-center gap-2">
       <div className="flex-1 relative">
         <Textarea
+          // Using a ref callback to work around TypeScript limitations with ref types
+          ref={(element) => {
+            if (inputRef && element) {
+              // This is a workaround for the type mismatch
+              (inputRef as MutableRefObject<HTMLTextAreaElement>).current =
+                element;
+            }
+          }}
           value={inputValue}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
             setInputValue(e.target.value)
           }
           onKeyDown={handleKeyDown}
           placeholder="Type your message here... (Press Enter to send, Shift+Enter for new line)"
-          className="min-h-[42px] max-h-[160px] resize-y w-full"
+          className="min-h-[42px] max-h-[160px] resize-y w-full focus-visible:ring-indigo-500"
           disabled={isLoading}
           aria-label="Chat message input"
         />
@@ -51,7 +66,7 @@ export const ChatInputForm: React.FC<ChatInputFormProps> = ({
       <Button
         type="submit"
         disabled={isLoading || !inputValue.trim()}
-        className="min-h-[42px]"
+        className="min-h-[42px] bg-indigo-600 hover:bg-indigo-700 text-white dark:bg-indigo-700 dark:hover:bg-indigo-800"
         aria-label="Send message"
       >
         {isLoading ? (
