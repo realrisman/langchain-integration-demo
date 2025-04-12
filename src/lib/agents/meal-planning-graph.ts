@@ -75,7 +75,8 @@ export function createThreadConfig() {
 export async function processMealPlannerInput(
   graph: ReturnType<typeof createMealPlanningGraph>,
   userInput: string | Command,
-  threadConfig: ReturnType<typeof createThreadConfig>
+  threadConfig: ReturnType<typeof createThreadConfig>,
+  signal?: AbortSignal
 ) {
   const input =
     typeof userInput === "string"
@@ -84,8 +85,16 @@ export async function processMealPlannerInput(
 
   const updates = [];
 
+  // Add the signal to the config if provided
+  const config = signal ? { ...threadConfig, signal } : threadConfig;
+
   // Stream updates from the graph
-  for await (const update of await graph.stream(input, threadConfig)) {
+  for await (const update of await graph.stream(input, config)) {
+    // Check if we've been aborted
+    if (signal?.aborted) {
+      break;
+    }
+
     const lastMessage = update.messages
       ? update.messages[update.messages.length - 1]
       : undefined;

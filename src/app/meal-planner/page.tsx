@@ -20,11 +20,34 @@ export default function MealPlannerPage() {
   >([]);
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
+
+  // Set up event listeners to cancel requests when user leaves
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+
+    // Only add the beforeunload event listener (removes visibilitychange)
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Clean up event listeners
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+
+      // Abort any pending requests
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,17 +58,27 @@ export default function MealPlannerPage() {
     setMessages((prev) => [...prev, { role: "user", content: inputValue }]);
     setIsLoading(true);
 
+    // Cancel any existing request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+
+    // Create a new AbortController for this request
+    abortControllerRef.current = new AbortController();
+    const { signal } = abortControllerRef.current;
+
     try {
       // Prepare request body
       const requestBody = threadId
         ? { threadId, message: inputValue }
         : { message: inputValue };
 
-      // Send request to API
+      // Send request to API with abort signal
       const response = await fetch("/api/meal-planner", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
+        signal: signal,
       });
 
       if (!response.ok) {
@@ -72,15 +105,18 @@ export default function MealPlannerPage() {
       });
     } catch (error) {
       console.error("Error:", error);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "agent",
-          content:
-            "Sorry, there was an error processing your request. Please try again.",
-          agent: "system",
-        },
-      ]);
+      // Only add error message if the request wasn't aborted
+      if (error instanceof Error && error.name !== "AbortError") {
+        setMessages((prev) => [
+          ...prev,
+          {
+            role: "agent",
+            content:
+              "Sorry, there was an error processing your request. Please try again.",
+            agent: "system",
+          },
+        ]);
+      }
     } finally {
       setIsLoading(false);
       setInputValue("");
