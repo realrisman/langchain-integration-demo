@@ -1,4 +1,5 @@
 import { Info, MessageSquare, Sparkles, Zap } from "lucide-react";
+import { useChatStore } from "@/store/chat-store";
 
 /**
  * EmptyChat - Displays an engaging welcome screen when there are no messages yet
@@ -91,12 +92,14 @@ const SuggestedPrompt = ({ text }: { text: string }) => (
   <button
     className="text-left p-2 bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-sm text-gray-700 dark:text-gray-300 transition-colors border border-gray-200 dark:border-gray-700"
     onClick={() => {
-      const inputElement = document.querySelector(
-        'input[placeholder="Type your message..."]'
-      ) as HTMLInputElement;
-      if (inputElement) {
-        inputElement.value = text;
-        inputElement.focus();
+      const { setInput } = useChatStore.getState();
+      setInput(text);
+
+      const textareaElement = document.querySelector(
+        'textarea[placeholder*="Type your message"]'
+      ) as HTMLTextAreaElement;
+      if (textareaElement) {
+        textareaElement.focus();
       }
     }}
   >
