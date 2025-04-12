@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { v4 as uuidv4 } from "uuid";
 import { useRef, useCallback } from "react";
 import type { FormEvent } from "react";
-import { MealPlannerState, MealPlannerResponse } from "@/types/meal-planner";
+import { MealPlannerState } from "@/types/meal-planner";
+import { MealPlannerService } from "@/lib/services/meal-planner-service";
 
 /**
  * Zustand store for meal planner state management
@@ -46,82 +47,6 @@ export const useMealPlannerStore = create<MealPlannerState>((set) => ({
 }));
 
 /**
- * Helper to safely abort a controller if it exists
- */
-const safelyAbort = (controller: AbortController | null) => {
-  // Only abort if controller exists and signal is not already aborted
-  if (controller && !controller.signal.aborted) {
-    try {
-      controller.abort();
-    } catch (e) {
-      // Ignore AbortError - this is expected when aborting
-      if (e instanceof Error && e.name !== "AbortError") {
-        console.error("Error aborting controller:", e);
-      }
-    }
-  }
-};
-
-/**
- * Sends a message to the meal planner API
- */
-export const sendMessage = async (
-  message: string,
-  threadId: string | null,
-  signal?: AbortSignal
-): Promise<MealPlannerResponse> => {
-  try {
-    // Check if signal is already aborted
-    if (signal?.aborted) {
-      throw new DOMException("Aborted", "AbortError");
-    }
-
-    // Prepare request body based on whether we have a threadId
-    const requestBody = threadId ? { threadId, message } : { message };
-
-    // Send request to API
-    const response = await fetch("/api/meal-planner", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(requestBody),
-      signal,
-    });
-
-    // Check for aborted signal again after fetch
-    if (signal?.aborted) {
-      throw new DOMException("Aborted", "AbortError");
-    }
-
-    if (!response.ok) {
-      // Special handling for 499 status (client closed request)
-      if (response.status === 499) {
-        throw new DOMException("Request aborted", "AbortError");
-      }
-
-      const error = new Error(`API error: ${response.statusText}`);
-      error.name = "ApiError";
-      throw error;
-    }
-
-    return await response.json();
-  } catch (error) {
-    // Handle AbortError separately
-    if (
-      error instanceof Error &&
-      (error.name === "AbortError" ||
-        (error instanceof DOMException && error.name === "AbortError"))
-    ) {
-      // Create a standardized abort error
-      const abortError = new DOMException("Request aborted", "AbortError");
-      throw abortError;
-    }
-
-    // Rethrow other errors
-    throw error;
-  }
-};
-
-/**
  * Custom hook for meal planner actions
  */
 export const useMealPlannerActions = () => {
@@ -142,7 +67,7 @@ export const useMealPlannerActions = () => {
   // Memoize cancelRequest to avoid dependency changes in useEffect
   const cancelRequest = useCallback(() => {
     if (abortControllerRef.current) {
-      safelyAbort(abortControllerRef.current);
+      MealPlannerService.safelyAbort(abortControllerRef.current);
       abortControllerRef.current = null;
     }
   }, []);
@@ -174,7 +99,11 @@ export const useMealPlannerActions = () => {
     const { signal } = abortControllerRef.current;
 
     try {
-      const data = await sendMessage(messageText, threadId, signal);
+      const data = await MealPlannerService.sendMessage(
+        messageText,
+        threadId,
+        signal
+      );
 
       // Only proceed if the request wasn't aborted
       if (!signal.aborted) {
