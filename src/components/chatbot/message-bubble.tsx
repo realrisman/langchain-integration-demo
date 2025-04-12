@@ -31,11 +31,16 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
   const isUser = role === "user";
 
   return (
-    <div className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}>
+    <div
+      className={`flex gap-3 ${isUser ? "flex-row-reverse" : "flex-row"}`}
+      data-animate-message
+    >
       {/* Avatar */}
       <div
-        className={`h-10 w-10 flex items-center justify-center flex-shrink-0 rounded-full ${
-          isUser ? "bg-blue-100 text-blue-600" : "bg-gray-100 text-gray-600"
+        className={`h-10 w-10 flex items-center justify-center flex-shrink-0 rounded-full shadow-sm ${
+          isUser
+            ? "bg-gradient-to-br from-blue-500 to-indigo-600 text-white"
+            : "bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-700 dark:to-gray-800 text-gray-600 dark:text-gray-300"
         }`}
       >
         {isUser ? <User size={20} /> : <Bot size={20} />}
@@ -43,8 +48,10 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
 
       {/* Message content */}
       <div
-        className={`rounded-2xl py-2 px-3 max-w-[80%] ${
-          isUser ? "bg-blue-600 text-white" : "bg-gray-100 text-gray-800"
+        className={`rounded-2xl py-3 px-4 max-w-[85%] shadow-sm ${
+          isUser
+            ? "bg-gradient-to-r from-blue-600 to-indigo-600 text-white"
+            : "bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 border border-gray-100 dark:border-gray-700"
         }`}
       >
         {isUser ? (
@@ -52,17 +59,19 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
         ) : (
           <MarkdownRenderer
             content={content}
-            className={isUser ? "prose-invert" : ""}
+            className={`prose-sm max-w-none ${isUser ? "prose-invert" : ""}`}
           />
         )}
 
         {/* Timestamp */}
         <div
-          className={`text-xs mt-1 ${
-            isUser ? "text-blue-200" : "text-gray-500"
+          className={`text-xs mt-2 flex items-center ${
+            isUser ? "text-blue-200" : "text-gray-500 dark:text-gray-400"
           }`}
         >
-          {formatDistanceToNow(timestamp, { addSuffix: true })}
+          <span className="inline-block">
+            {formatDistanceToNow(timestamp, { addSuffix: true })}
+          </span>
         </div>
       </div>
     </div>
