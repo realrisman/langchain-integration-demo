@@ -4,7 +4,16 @@ import { useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
-import { Info, Loader2, Send, Sparkles, Lock } from "lucide-react";
+import {
+  Info,
+  Loader2,
+  Send,
+  Sparkles,
+  Lock,
+  Home,
+  UtensilsCrossed,
+  MessageSquare,
+} from "lucide-react";
 import {
   MessageBubble,
   LoadingIndicator,
@@ -18,6 +27,8 @@ import {
 import { cn } from "@/lib/utils";
 import { useChatStore } from "@/store/chat-store";
 import { useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 
 /**
  * ChatbotPage - Interactive AI chatbot interface
@@ -36,6 +47,7 @@ export default function ChatbotPage() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const pathname = usePathname();
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -110,6 +122,53 @@ export default function ChatbotPage() {
           </div>
 
           <div className="flex-1 p-4 overflow-y-auto">
+            {/* Navigation Section */}
+            <div className="space-y-1 mb-6">
+              <p className="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400 mb-2">
+                Navigation
+              </p>
+              <nav className="space-y-2">
+                <Link
+                  href="/"
+                  onClick={() => setMobileSidebarOpen(false)}
+                  className="block"
+                >
+                  <div
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
+                      pathname === "/"
+                        ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    )}
+                  >
+                    <Home className="h-5 w-5 min-w-5" />
+                    <span className="text-sm font-medium">Home</span>
+                  </div>
+                </Link>
+                <div className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                  <MessageSquare className="h-5 w-5 min-w-5" />
+                  <span className="text-sm font-medium">Chatbot</span>
+                </div>
+                <Link
+                  href="/meal-planner"
+                  onClick={() => setMobileSidebarOpen(false)}
+                  className="block"
+                >
+                  <div
+                    className={cn(
+                      "flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors",
+                      pathname === "/meal-planner"
+                        ? "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300"
+                        : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                    )}
+                  >
+                    <UtensilsCrossed className="h-5 w-5 min-w-5" />
+                    <span className="text-sm font-medium">Meal Planner</span>
+                  </div>
+                </Link>
+              </nav>
+            </div>
+
             <div className="space-y-1">
               <p className="text-xs uppercase font-semibold text-gray-500 dark:text-gray-400 mb-2">
                 About
