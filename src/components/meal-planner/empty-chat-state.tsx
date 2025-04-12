@@ -5,14 +5,21 @@ import React from "react";
  */
 export interface EmptyChatStateProps {
   setInputValue?: (value: string) => void;
+  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement>;
 }
 
 export const EmptyChatState: React.FC<EmptyChatStateProps> = ({
   setInputValue,
+  inputRef,
 }) => {
   const handleExampleClick = (text: string) => {
     if (setInputValue) {
       setInputValue(text);
+
+      // Focus the input after a short delay to ensure the value is set
+      setTimeout(() => {
+        inputRef?.current?.focus();
+      }, 10);
     }
   };
 

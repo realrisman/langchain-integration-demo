@@ -10,16 +10,18 @@ interface MessageListProps {
   messages: Message[];
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   setInputValue?: (value: string) => void;
+  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement>;
 }
 
 export const MessageList: React.FC<MessageListProps> = ({
   messages,
   messagesEndRef,
   setInputValue,
+  inputRef,
 }) => {
   // Early return for empty messages
   if (messages.length === 0) {
-    return <EmptyChatState setInputValue={setInputValue} />;
+    return <EmptyChatState setInputValue={setInputValue} inputRef={inputRef} />;
   }
 
   return (
