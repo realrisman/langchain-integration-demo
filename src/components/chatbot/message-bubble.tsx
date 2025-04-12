@@ -52,7 +52,6 @@ export const MessageBubble = ({ message }: MessageBubbleProps) => {
         ) : (
           <MarkdownRenderer
             content={content}
-            variant="compact"
             className={isUser ? "prose-invert" : ""}
           />
         )}
