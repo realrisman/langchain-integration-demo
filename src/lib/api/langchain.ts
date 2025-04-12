@@ -15,14 +15,30 @@ export interface ChatMessage {
  */
 export type ChatResponse = {
   response: string;
+  error?: string;
+};
+
+/**
+ * Configuration options for the chat model
+ */
+export interface ChatModelConfig {
+  modelName?: string;
+  temperature?: number;
+}
+
+/**
+ * Default configuration
+ */
+const DEFAULT_CONFIG: ChatModelConfig = {
+  modelName: "gpt-3.5-turbo",
+  temperature: 0.7,
 };
 
 /**
  * Initializes and returns the LangChain chat model
  */
 export const createChatModel = (
-  modelName = "gpt-3.5-turbo",
-  temperature = 0.7
+  config: ChatModelConfig = DEFAULT_CONFIG
 ): ChatOpenAI => {
   const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
@@ -31,8 +47,8 @@ export const createChatModel = (
 
   return new ChatOpenAI({
     openAIApiKey: apiKey,
-    modelName,
-    temperature,
+    modelName: config.modelName || DEFAULT_CONFIG.modelName,
+    temperature: config.temperature || DEFAULT_CONFIG.temperature,
   });
 };
 
@@ -48,22 +64,14 @@ export const convertToLangChainMessages = (messages: ChatMessage[]) => {
 };
 
 /**
- * Generates a chat response from the given messages
+ * Formats the LangChain response content to a string
  */
-export const generateChatResponse = async (
-  messages: ChatMessage[],
-  modelName?: string,
-  temperature?: number
-): Promise<string> => {
-  const chatModel = createChatModel(modelName, temperature);
-  const langChainMessages = convertToLangChainMessages(messages);
-  const response = await chatModel.invoke(langChainMessages);
-
-  // Handle various content types that might be returned by LangChain
-  const content = response.content;
+export const formatResponseContent = (content: unknown): string => {
   if (typeof content === "string") {
     return content;
-  } else if (Array.isArray(content)) {
+  }
+
+  if (Array.isArray(content)) {
     // Join complex message content if it's an array
     return content
       .map((item) =>
@@ -72,8 +80,32 @@ export const generateChatResponse = async (
           : String(item)
       )
       .join(" ");
-  } else {
-    // Fallback for any other type
-    return String(content);
+  }
+
+  // Fallback for any other type
+  return String(content);
+};
+
+/**
+ * Generates a chat response from the given messages
+ */
+export const generateChatResponse = async (
+  messages: ChatMessage[],
+  config?: ChatModelConfig
+): Promise<string> => {
+  try {
+    const chatModel = createChatModel(config);
+    const langChainMessages = convertToLangChainMessages(messages);
+    const response = await chatModel.invoke(langChainMessages);
+    return formatResponseContent(response.content);
+  } catch (error) {
+    console.error("Error generating chat response:", error);
+    if (error instanceof Error) {
+      throw createApiError("external_api", `LangChain error: ${error.message}`);
+    }
+    throw createApiError(
+      "server",
+      "Unknown error occurred while generating response"
+    );
   }
 };
