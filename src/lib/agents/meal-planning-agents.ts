@@ -23,7 +23,7 @@ function callLlm(
     goto: z
       .enum(["finish", ...targetAgentNodes])
       .describe(
-        "The next agent to call, or 'finish' if the user's query has been resolved."
+        "The next agent to call, or 'finish' if the user's query has been resolved. Must choose the most appropriate agent based on the user's query and conversation context."
       ),
     topic: z
       .string()
@@ -33,72 +33,26 @@ function callLlm(
       ),
   });
 
-  // Check if we're in a potential loop by examining recent AI messages
-  const aiMessages = messages.filter(
-    (msg) => msg.constructor.name === "AIMessage"
-  );
-  const recentAiMessages = aiMessages.slice(-6);
-
-  // More sophisticated loop detection
-  let askingForPreferences = 0;
-  for (const msg of recentAiMessages) {
-    const content = msg.content.toString().toLowerCase();
-    if (
-      (content.includes("dietary") && content.includes("preference")) ||
-      (content.includes("specify") && content.includes("diet")) ||
-      (content.includes("let me know") && content.includes("preferences"))
-    ) {
-      askingForPreferences++;
-    }
-  }
-
-  // Detect if we're in a loop asking for dietary preferences (at least 3 similar questions)
-  const isInPreferenceLoop = askingForPreferences >= 3;
-
-  // Extract the latest user message
-  const latestUserMessage = messages
-    .slice()
-    .reverse()
-    .find((msg) => msg.constructor.name === "HumanMessage");
-
-  // If in a loop and asking simple recipe query, force providing generic healthy recipes
-  if (
-    isInPreferenceLoop &&
-    latestUserMessage &&
-    (latestUserMessage.content.toString().toLowerCase().includes("healthy") ||
-      latestUserMessage.content.toString().toLowerCase().includes("recipe"))
-  ) {
-    return {
-      response:
-        "Based on your interest in healthy recipes, here are some general healthy dinner options that most people enjoy:\n\n" +
-        "1. Mediterranean Baked Salmon with roasted vegetables and quinoa\n" +
-        "2. Grilled Chicken with steamed broccoli and sweet potatoes\n" +
-        "3. Vegetable Stir-Fry with tofu and brown rice\n" +
-        "4. Turkey and Vegetable Chili\n" +
-        "5. Zucchini Noodles with lean protein and tomato sauce\n\n" +
-        "These meals are balanced, nutrient-dense, and suitable for most dietary preferences. Would you like more specific details about any of these recipes?",
-      goto: "finish",
-      topic: "healthy recipes",
-    };
-  }
-
   // Create enhanced system prompt with context awareness
   const enhancedSystemPrompt = `You are a ${agentName} responding to users in a meal planning system.
   
-IMPORTANT: Carefully review the full conversation history before responding to maintain context and provide coherent responses.
+IMPORTANT ROUTING INSTRUCTIONS:
+1. You MUST determine if the user's message is best handled by you or should be routed to another agent:
+   - For diet questions or weight loss strategies → Route to "dietaryAdvisor"
+   - For specific recipe details or meal suggestions → Route to "recipeSuggester"
+   - For shopping lists or ingredient planning → Route to "groceryListBuilder"
+   - For inventory questions → Route to "foodInventory"
+   - If you can fully answer the query → Return "finish"
 
-1. If the user is asking a follow-up question about a recipe, meal, or topic mentioned earlier:
-   - Provide detailed information that builds on what was previously discussed
-   - Don't start over with new recommendations unless explicitly requested
-   - Reference specific items from previous messages
+2. MAINTAIN CONVERSATION CONTEXT AT ALL COSTS:
+   - If the user is asking about something mentioned earlier (like "tell me about that diet" or "can you explain more about X"), continue that same topic
+   - Pay special attention to references like "it", "that recipe", "the diet you mentioned", etc.
 
-2. If the user expresses interest in a specific recipe mentioned earlier:
-   - Provide detailed ingredients, cooking instructions, and nutritional information
-   - Don't change the subject to suggesting new recipes
-   
-3. Remember user preferences mentioned earlier in the conversation (e.g., likes fish, vegetarian, gluten-free)
+3. When a user follows up about a topic started by another agent:
+   - If it's now in your expertise area, answer it
+   - If not, route to the appropriate agent and explain why in your response
 
-4. Be consistent with your previous responses. Don't recommend a completely different set of recipes if the user is asking for details about one you already mentioned.`;
+YOUR PRIMARY GOAL: Ensure contextual continuity by routing to the right agent or providing responses that directly address the user's actual query.`;
 
   // Add enhanced prompt as a system message at the beginning
   const augmentedMessages = [
@@ -121,12 +75,14 @@ export async function recipeSuggester(
   const systemPrompt =
     "You are a recipe expert named 'Recipe Suggester' that can recommend meals based on user preferences, dietary needs, and available ingredients. " +
     "IMPORTANT: Always identify yourself as 'Recipe Suggester' at the beginning of your response. " +
-    "When a user asks for more details about a specific recipe you previously mentioned, provide them with detailed instructions, ingredients, and cooking tips for that recipe. " +
-    "If the user asks for 'healthy recipes' without specifying preferences, provide general healthy recipe options rather than asking for more details. " +
-    "If you need specific dietary advice, ask 'dietaryAdvisor' for help. " +
-    "If you need to create a grocery list, ask 'groceryListBuilder' for help. " +
-    "If you need to check available ingredients, ask 'foodInventory' for help. " +
-    "If you have enough information to respond to the user, return 'finish'. " +
+    "ROUTING INSTRUCTIONS: " +
+    "- If the user asks about diet plans, weight loss strategies, or nutrition advice, say 'Let me connect you with our dietary advisor who specializes in this' and route to 'dietaryAdvisor'. " +
+    "- If the user asks about creating grocery lists, say 'Let me connect you with our grocery expert' and route to 'groceryListBuilder'. " +
+    "- If the user asks about checking ingredients they have, route to 'foodInventory'. " +
+    "- If you can fully answer the question about recipes or meal suggestions, return 'finish'. " +
+    "MAINTAIN CONTEXT: " +
+    "- If the user refers to something previously mentioned (like 'that recipe' or 'it'), make sure to reference the specific item from earlier in the conversation. " +
+    "- Never start over with generic responses if the conversation has a clear context. " +
     "Never mention other agents by name to the user.";
 
   const messages = [
@@ -164,12 +120,14 @@ export async function dietaryAdvisor(
   const systemPrompt =
     "You are a nutrition expert named 'Dietary Advisor' that can provide dietary advice based on health goals and restrictions. " +
     "IMPORTANT: Always identify yourself as 'Dietary Advisor' at the beginning of your response. " +
-    "Pay attention to the conversation history to provide consistent advice that builds on previous exchanges. " +
-    "If the user asks for 'healthy recipes' without specifying preferences, provide general nutritional advice rather than repeatedly asking for more details. " +
-    "If you need meal recommendations, ask 'recipeSuggester' for help. " +
-    "If you need to create a grocery list, ask 'groceryListBuilder' for help. " +
-    "If you need to check available ingredients, ask 'foodInventory' for help. " +
-    "If you have enough information to respond to the user, return 'finish'. " +
+    "ROUTING INSTRUCTIONS: " +
+    "- If the user asks about specific recipes or meal ideas, say 'Let me connect you with our recipe expert who can help with that' and route to 'recipeSuggester'. " +
+    "- If the user asks about creating grocery lists, say 'Let me connect you with our grocery expert' and route to 'groceryListBuilder'. " +
+    "- If the user asks about checking ingredients they have, route to 'foodInventory'. " +
+    "- If you can fully answer the question about nutrition, diets, or dietary restrictions, return 'finish'. " +
+    "MAINTAIN CONTEXT: " +
+    "- If the user refers to a diet plan or nutrition advice mentioned earlier, continue that same topic. " +
+    "- Pay special attention to context like 'that diet' or 'the nutrition plan you mentioned'. " +
     "Never mention other agents by name to the user.";
 
   const messages = [
@@ -211,11 +169,14 @@ export async function groceryListBuilder(
   const systemPrompt =
     "You are a grocery expert named 'Grocery List Builder' that can create shopping lists based on recipes and meal plans. " +
     "IMPORTANT: Always identify yourself as 'Grocery List Builder' at the beginning of your response. " +
-    "Pay close attention to recipes and ingredients mentioned earlier in the conversation to create comprehensive lists. " +
-    "If you need meal recommendations, ask 'recipeSuggester' for help. " +
-    "If you need dietary advice, ask 'dietaryAdvisor' for help. " +
-    "If you need to check available ingredients, ask 'foodInventory' for help. " +
-    "If you have enough information to respond to the user, return 'finish'. " +
+    "ROUTING INSTRUCTIONS: " +
+    "- If the user asks about specific recipes or meal ideas, say 'Let me connect you with our recipe expert' and route to 'recipeSuggester'. " +
+    "- If the user asks about nutrition advice or dietary restrictions, say 'Let me connect you with our dietary expert' and route to 'dietaryAdvisor'. " +
+    "- If the user asks about checking ingredients they have, route to 'foodInventory'. " +
+    "- If you can fully answer the question about grocery lists or shopping, return 'finish'. " +
+    "MAINTAIN CONTEXT: " +
+    "- Base your grocery lists on recipes or meal plans specifically mentioned in the conversation. " +
+    "- If the user asks about 'ingredients for that recipe', reference the specific recipe discussed. " +
     "Never mention other agents by name to the user.";
 
   const messages = [
@@ -251,13 +212,16 @@ export async function foodInventory(
   state: typeof MessagesAnnotation.State
 ): Promise<Command> {
   const systemPrompt =
-    "You are an inventory manager named 'Food Inventory' that tracks available ingredients and suggests using existing items. " +
+    "You are an inventory expert named 'Food Inventory' that can help track ingredients and suggest meals based on what users already have. " +
     "IMPORTANT: Always identify yourself as 'Food Inventory' at the beginning of your response. " +
-    "Reference the conversation history to understand what recipes and ingredients have been discussed. " +
-    "If you need meal recommendations, ask 'recipeSuggester' for help. " +
-    "If you need dietary advice, ask 'dietaryAdvisor' for help. " +
-    "If you need to create a grocery list, ask 'groceryListBuilder' for help. " +
-    "If you have enough information to respond to the user, return 'finish'. " +
+    "ROUTING INSTRUCTIONS: " +
+    "- If the user asks about specific recipes or meal ideas, say 'Let me connect you with our recipe expert' and route to 'recipeSuggester'. " +
+    "- If the user asks about nutrition advice or dietary restrictions, say 'Let me connect you with our dietary expert' and route to 'dietaryAdvisor'. " +
+    "- If the user asks about creating grocery lists, say 'Let me connect you with our grocery expert' and route to 'groceryListBuilder'. " +
+    "- If you can fully answer the question about available ingredients or pantry management, return 'finish'. " +
+    "MAINTAIN CONTEXT: " +
+    "- If the user refers to ingredients mentioned earlier, reference those specific items. " +
+    "- Keep track of ingredients the user has mentioned having throughout the conversation. " +
     "Never mention other agents by name to the user.";
 
   const messages = [
@@ -272,7 +236,7 @@ export async function foodInventory(
   const response = await callLlm(
     messages,
     targetAgentNodes,
-    "inventory manager"
+    "inventory expert"
   );
   const aiMsg = {
     role: "ai",
@@ -309,56 +273,19 @@ export function humanNode(state: typeof MessagesAnnotation.State): Command {
       }
     }
 
-    // Check if this user message should change the agent
-    if (typeof lastMessage.content === "string") {
-      const content = lastMessage.content.toLowerCase();
-
-      // Check for dietary/nutrition related queries
-      if (
-        content.includes("dietary") ||
-        content.includes("diet") ||
-        content.includes("nutrition") ||
-        content.includes("nutritional") ||
-        content.includes("dietary advisor")
-      ) {
-        return new Command({
-          goto: "dietaryAdvisor",
-        });
-      }
+    // If no active agent was found, default to recipe suggester
+    if (!activeAgent) {
+      activeAgent = "recipeSuggester";
     }
 
-    // Default to recipe suggester if no active agent is found
+    // Always route to the last active agent to maintain conversation flow
     return new Command({
-      goto: activeAgent || "recipeSuggester",
+      goto: activeAgent,
     });
   }
 
   // Only interrupt if we need user input (this should never be reached in an API context)
   const userInput: string = interrupt("Ready for user input.");
-
-  // Check if this user input should change the agent
-  if (typeof userInput === "string") {
-    const content = userInput.toLowerCase();
-
-    // Check for dietary/nutrition related queries
-    if (
-      content.includes("dietary") ||
-      content.includes("diet") ||
-      content.includes("nutrition") ||
-      content.includes("nutritional") ||
-      content.includes("dietary advisor")
-    ) {
-      const message = {
-        role: "user",
-        content: userInput,
-      };
-
-      return new Command({
-        goto: "dietaryAdvisor",
-        update: { messages: [message] },
-      });
-    }
-  }
 
   let activeAgent: string | undefined = undefined;
 
@@ -370,14 +297,19 @@ export function humanNode(state: typeof MessagesAnnotation.State): Command {
     }
   }
 
+  // If no active agent was found, default to recipe suggester
+  if (!activeAgent) {
+    activeAgent = "recipeSuggester";
+  }
+
   const message = {
     role: "user",
     content: userInput,
   };
 
-  // Default to recipe suggester if no active agent is found
+  // Always route to the last active agent to maintain conversation continuity
   return new Command({
-    goto: activeAgent || "recipeSuggester",
+    goto: activeAgent,
     update: { messages: [message] },
   });
 }
