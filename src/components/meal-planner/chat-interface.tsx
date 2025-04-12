@@ -1,6 +1,5 @@
 import React from "react";
 import type { FormEvent } from "react";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Message } from "@/types/meal-planner";
 import { MessageList } from "./message-list";
 import { ChatInputForm } from "./chat-input-form";
@@ -15,6 +14,7 @@ interface ChatInterfaceProps {
   setInputValue: (value: string) => void;
   handleSubmit: (e: FormEvent) => Promise<void>;
   isLoading: boolean;
+  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement>;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
@@ -24,20 +24,22 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   setInputValue,
   handleSubmit,
   isLoading,
+  inputRef,
 }) => {
   return (
-    <Card className="flex-1 flex flex-col overflow-hidden shadow-md border-slate-200">
-      <CardContent className="flex-1 p-4 md:p-6 overflow-y-auto">
+    <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 p-3 md:p-5 overflow-y-auto">
         <MessageList messages={messages} messagesEndRef={messagesEndRef} />
-      </CardContent>
-      <CardFooter className="border-t p-4 bg-white">
+      </div>
+      <div className="border-t p-3 md:p-4 bg-white dark:bg-slate-900/80 dark:border-slate-700">
         <ChatInputForm
           inputValue={inputValue}
           setInputValue={setInputValue}
           handleSubmit={handleSubmit}
           isLoading={isLoading}
+          inputRef={inputRef}
         />
-      </CardFooter>
-    </Card>
+      </div>
+    </div>
   );
 };
