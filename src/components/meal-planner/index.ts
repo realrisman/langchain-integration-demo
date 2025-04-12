@@ -4,3 +4,6 @@ export * from "./chat-interface";
 export * from "./empty-chat-state";
 export * from "./message-item";
 export * from "./message-list";
+export * from "./meal-planner-header";
+export * from "./meal-planner-layout";
+export * from "./meal-planner-content";

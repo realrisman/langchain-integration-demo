@@ -10,7 +10,7 @@ interface MessageListProps {
   messages: Message[];
   messagesEndRef: React.RefObject<HTMLDivElement | null>;
   setInputValue?: (value: string) => void;
-  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement>;
+  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
   isLoading?: boolean;
 }
 

@@ -14,7 +14,7 @@ interface ChatInterfaceProps {
   setInputValue: (value: string) => void;
   handleSubmit: (e: FormEvent) => Promise<void>;
   isLoading: boolean;
-  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement>;
+  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({

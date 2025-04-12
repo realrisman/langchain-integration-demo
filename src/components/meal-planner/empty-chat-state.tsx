@@ -5,7 +5,7 @@ import React from "react";
  */
 export interface EmptyChatStateProps {
   setInputValue?: (value: string) => void;
-  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement>;
+  inputRef?: React.RefObject<HTMLInputElement | HTMLTextAreaElement | null>;
 }
 
 export const EmptyChatState: React.FC<EmptyChatStateProps> = ({
