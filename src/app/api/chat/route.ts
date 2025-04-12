@@ -3,14 +3,16 @@ import { z } from "zod";
 import { createApiError, createErrorResponse } from "@/lib/api/errors";
 import { generateChatResponse, ChatResponse } from "@/lib/api/langchain";
 
-// Schema validation
+/**
+ * Request validation schema
+ */
 const messageSchema = z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.string().min(1),
+  content: z.string().min(1).max(10000),
 });
 
 const requestSchema = z.object({
-  messages: z.array(messageSchema).min(1),
+  messages: z.array(messageSchema).min(1).max(50),
 });
 
 /**
@@ -18,14 +20,17 @@ const requestSchema = z.object({
  */
 export async function POST(req: NextRequest) {
   try {
-    // Parse and validate request
-    const body = await req.json();
+    // Validate the request body
+    const body = await req.json().catch(() => {
+      throw createApiError("validation", "Invalid JSON in request body");
+    });
+
     const validationResult = requestSchema.safeParse(body);
 
     if (!validationResult.success) {
       throw createApiError(
         "validation",
-        "Invalid request format: " + validationResult.error.message
+        `Invalid request format: ${validationResult.error.message}`
       );
     }
 
