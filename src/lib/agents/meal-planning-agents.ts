@@ -131,13 +131,6 @@ function truncateText(text: string, maxLength: number): string {
 export async function recipeSuggester(
   state: typeof MessagesAnnotation.State
 ): Promise<Command> {
-  // Debug the incoming state
-  console.log(
-    "recipeSuggester received state with",
-    state.messages?.length || 0,
-    "messages"
-  );
-
   // If we have no messages, this indicates an issue with state preservation
   if (!state.messages || state.messages.length === 0) {
     console.error("RecipeSuggester received empty message state!");

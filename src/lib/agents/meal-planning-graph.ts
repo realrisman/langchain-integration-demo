@@ -50,11 +50,6 @@ export function createMealPlanningGraph() {
 
   // Define routing function for entry point
   const routeInitialNode = (state: typeof MessagesAnnotation.State) => {
-    console.log(
-      "Initial routing with state messages:",
-      state.messages?.length || 0
-    );
-
     if (state.messages && state.messages.length > 0) {
       // Check if this is a resumption of conversation with existing messages
       if (state.messages.length > 1) {
@@ -72,7 +67,6 @@ export function createMealPlanningGraph() {
                 "foodInventory",
               ].includes(agentName)
             ) {
-              console.log("Routing to previous agent:", agentName);
               return agentName;
             }
           }
@@ -96,14 +90,12 @@ export function createMealPlanningGraph() {
           content.includes("calories") ||
           content.includes("healthy eating")
         ) {
-          console.log("Routing to dietaryAdvisor based on content");
           return "dietaryAdvisor";
         }
       }
     }
 
     // Default to recipe suggester for other queries
-    console.log("Default routing to recipeSuggester");
     return "recipeSuggester";
   };
 
@@ -162,15 +154,7 @@ export async function processMealPlannerInput(
     input = { messages: [{ role: "user", content: userInput }] };
   } else {
     // For existing conversations, pass the Command object directly
-    // Make sure we're getting and applying any state to preserve conversation history
     input = userInput;
-
-    // Log the input for debugging purposes
-    console.log(
-      "Processing input for thread:",
-      threadConfig.configurable.thread_id
-    );
-    console.log("Input command:", JSON.stringify(input));
   }
 
   const updates = [];
@@ -189,11 +173,6 @@ export async function processMealPlannerInput(
       // Check if we've been aborted
       if (signal?.aborted) {
         break;
-      }
-
-      // Log state updates for debugging
-      if (update.messages) {
-        console.log("Current message count:", update.messages.length);
       }
 
       // Increment interaction counter and check if we've exceeded the maximum

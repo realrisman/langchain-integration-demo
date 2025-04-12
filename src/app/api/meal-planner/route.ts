@@ -46,7 +46,6 @@ export async function POST(req: NextRequest) {
   req.signal.addEventListener("abort", () => {
     // When request is aborted, it means the page was fully closed
     controller.abort();
-    console.log("Request aborted - page was closed");
   });
 
   let threadId: string | null = null;
@@ -111,7 +110,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         threadId,
         updates,
-        messageCount: messages.length,
       });
     } else {
       // Validate follow-up request
@@ -154,10 +152,6 @@ export async function POST(req: NextRequest) {
       const newUserMessage: Message = { role: "user", content: body.message };
       const allMessages = [...existingMessages, newUserMessage];
 
-      console.log(
-        `Thread ${threadId} existing messages: ${existingMessages.length}`
-      );
-
       // Determine the last active agent from previous responses for this thread
       let lastAgent = "recipeSuggester"; // Default fallback
 
@@ -166,9 +160,6 @@ export async function POST(req: NextRequest) {
       if (storedAgent) {
         lastAgent = storedAgent;
       }
-
-      console.log("Thread ID:", threadId);
-      console.log("Last active agent:", lastAgent);
 
       // Create a command that includes ALL previous messages and routes to the right agent
       const command = new Command({
@@ -212,19 +203,15 @@ export async function POST(req: NextRequest) {
         messagesByThread.set(threadId, allMessages);
       }
 
-      // Return response with updates and debug information
+      // Return response with updates
       return NextResponse.json({
         threadId,
         updates,
-        lastAgent,
-        messageCount: allMessages.length,
-        updatesReceived: updates.length,
       });
     }
   } catch (error) {
     // If error is due to abort, return a 499 Client Closed Request
     if (error instanceof Error && error.name === "AbortError") {
-      console.log(`Request aborted for thread: ${threadId}`);
       return new NextResponse("Client closed request", { status: 499 });
     }
 
