@@ -10,6 +10,20 @@ This is a Next.js application that demonstrates integration with LangChain, Lang
 - Modern UI with Tailwind CSS and shadcn/ui components
 - Server components architecture with NextJS App Router
 
+## Screenshots
+
+### Home Page
+
+![Home Page](/screenshots/home.png)
+
+### Chatbot
+
+![Chatbot](/screenshots/chatbot.png)
+
+### Meal Planner
+
+![Meal Planner](/screenshots/meal-planner.png)
+
 ## Tech Stack
 
 - [Next.js](https://nextjs.org/)
