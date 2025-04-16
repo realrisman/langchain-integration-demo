@@ -1,6 +1,6 @@
 import React from "react";
 import { AgentInfoCard, ChatInterface } from "./index";
-import { Message } from "@/types";
+import { Message } from "@/types/meal-planner";
 
 interface MealPlannerContentProps {
   messages: Message[];
